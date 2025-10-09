@@ -1,37 +1,33 @@
-import express from "express";
-import cors from "cors";
-import mysql from "mysql";
+// server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+require('dotenv').config();
+
+const { sequelize, models } = require('./models'); // loads models & associations
+const apptRouter = require('./routes/appointments');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// MySQL connection
-const db = mysql.createConnection({
-  host: '127.0.0.1',
-  user: 'brojo',
-  password: 'AB12cd34@.',  // your MySQL password
-  database: "MediPortal"
-});
+// mount API routes
+app.use('/api/appointments', apptRouter);
 
-db.connect((err) => {
-  if (err) console.log("❌ Database connection failed", err);
-  else console.log("✅ Connected to MySQL database");
-});
+// basic root
+app.get('/', (req, res) => res.send('MediPortal backend is up'));
 
-// Example route
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
-});
-
-// Start server
-app.listen(5000, () => {
-  console.log("Server is running on port 5000");
-});
-app.get("/users", (req, res) => {
-  db.query("SELECT * FROM users", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
-});
-
+// start server and sync DB
+const PORT = process.env.PORT || 4000;
+async function start() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection OK');
+    // In development it's OK; in production prefer migrations.
+    await sequelize.sync({ alter: true }); 
+    console.log('Database synced');
+    app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+start();
