@@ -1,139 +1,69 @@
-/* src/HomePage.css */
+/* frontend/src/HomePage.css */
 
-/* General body/font styles */
-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f9f9f9;
-  }
-  
-  /* Header */
-  header {
-    background-color: #1e40af; /* Tailwind blue-600 */
-    color: white;
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  header h1 {
-    font-size: 1.75rem;
-    font-weight: bold;
-  }
-  
-  header nav a {
-    color: white;
-    margin-left: 1.5rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-  }
-  
-  header nav a:hover {
-    text-decoration: underline;
-    color: #93c5fd; /* Tailwind blue-300 */
-  }
-  
-  /* Hero Section */
-  section#home {
-    background-color: #bfdbfe; /* Tailwind blue-100 */
-    text-align: center;
-    padding: 4rem 1rem;
-  }
-  
-  section#home h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-  }
-  
-  section#home p {
-    font-size: 1.125rem;
-    max-width: 40rem;
-    margin: 0 auto;
-  }
-  
-  /* Sections */
-  section {
-    padding: 3rem 1rem;
-  }
-  
-  section h3 {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-  }
-  
-  /* Services & Doctors Grid */
-  .grid {
-    display: grid;
-    gap: 1.5rem;
-  }
-  
-  @media (min-width: 640px) {
-    .grid-cols-1.sm\:grid-cols-2 {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @media (min-width: 768px) {
-    .grid-cols-1.md\:grid-cols-3 {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  
-  .service-card, .doctor-card {
-    background-color: white;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .service-card:hover, .doctor-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  }
-  
-  /* Footer */
-  footer {
-    background-color: #1e40af; /* Tailwind blue-600 */
-    color: white;
-    padding: 3rem 2rem;
-  }
-  
-  footer h4 {
-    font-size: 1.125rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-  }
-  
-  footer a {
-    color: white;
-    text-decoration: none;
-    transition: color 0.3s ease;
-  }
-  
-  footer a:hover {
-    color: #93c5fd;
-  }
-  
-  footer p {
-    margin-top: 1rem;
-    font-size: 0.875rem;
-    text-align: center;
-  }
-  
-  /* Essentials List */
-  section ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-  }
-  
-  section ul li {
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-  }
-  
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.home-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+}
+
+.home-header p {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}
+
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background-color: #3498db;
+  color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 25%;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: scale(1.05);
+}
+
+.stat-card h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.navigation-section {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.navigation-section button {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  background-color: #2ecc71;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.navigation-section button:hover {
+  background-color: #27ae60;
+}
