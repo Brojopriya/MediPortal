@@ -6,8 +6,10 @@ const SignupPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     role: "PATIENT",
     password: "",
+    confirmPassword: "",
   });
 
   const handleChange = (e) => {
@@ -18,14 +20,32 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // send to backend
+    // Password match validation
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    // Optional: Phone number validation (basic)
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      alert("Please enter a valid phone number (10-15 digits).");
+      return;
+    }
+
+    // Send data to backend
     try {
-      const response = await fetch("/api/signup", {
+      await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          password: formData.password,
+        }),
       });
-      const data = await response.json();
 
       if (formData.role === "DOCTOR" || formData.role === "STAFF") {
         alert("Your account is pending admin approval.");
@@ -61,6 +81,15 @@ const SignupPage = () => {
             required
           />
 
+          <label>Phone Number</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+
           <label>Role</label>
           <select name="role" value={formData.role} onChange={handleChange}>
             <option value="PATIENT">Patient</option>
@@ -73,6 +102,15 @@ const SignupPage = () => {
             type="password"
             name="password"
             value={formData.password}
+            onChange={handleChange}
+            required
+          />
+
+          <label>Confirm Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
             onChange={handleChange}
             required
           />
