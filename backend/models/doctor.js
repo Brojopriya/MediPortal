@@ -1,34 +1,14 @@
-// models/Doctor.js
-import { DataTypes, Model } from 'sequelize';
+import { Model, DataTypes } from "sequelize";
 
 class Doctor extends Model {
   static initModel(sequelize) {
-    Doctor.init({
-      id: { 
-        type: DataTypes.INTEGER, 
-        primaryKey: true, 
-        autoIncrement: true 
-      },
-      user_id: { 
-        type: DataTypes.INTEGER, 
-        allowNull: false, 
-        references: { model: 'users', key: 'id' } 
-      },
-      specialty: { 
-        type: DataTypes.STRING, 
-        allowNull: true 
-      },
-      phone: { 
-        type: DataTypes.STRING, 
-        allowNull: true 
-      }
-    }, { 
-      sequelize, 
-      modelName: 'doctor', 
-      tableName: 'doctors' 
-    });
-
-    return Doctor;
+    return Doctor.init({
+      drID: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+      specialization: { type: DataTypes.STRING(100) },
+      availableDay: { type: DataTypes.STRING(100) },
+      userID: { type: DataTypes.INTEGER },
+      adminID: { type: DataTypes.INTEGER },
+    }, { sequelize, modelName: 'Doctor', tableName: 'Doctor', timestamps: false });
   }
 }
 

@@ -1,10 +1,13 @@
-// server.js
-const express = require('express');
-const bodyParser = require('body-parser');
-require('dotenv').config();
+// backend/server.js (ESM)
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
 
-const { sequelize, models } = require('./models'); // loads models & associations
-const apptRouter = require('./routes/appointments');
+dotenv.config();
+
+// IMPORTANT: include .js extension for local ESM imports
+import { sequelize, models } from './models/index.js';
+import apptRouter from './routes/appointments.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -21,7 +24,6 @@ async function start() {
   try {
     await sequelize.authenticate();
     console.log('Database connection OK');
-    // In development it's OK; in production prefer migrations.
     await sequelize.sync({ alter: true }); 
     console.log('Database synced');
     app.listen(PORT, () => console.log(`Server listening on ${PORT}`));

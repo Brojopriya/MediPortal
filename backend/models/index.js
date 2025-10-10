@@ -1,8 +1,8 @@
 // models/index.js
 import sequelize from '../db.js'; // Sequelize instance
 import User from './User.js';
-import Doctor from './doctor.js';
-import Appointment from './appointment.js';
+import Doctor from './Doctor.js';
+import Appointment from './Appointment.js';
 
 // Initialize all models
 const models = { User, Doctor, Appointment };
