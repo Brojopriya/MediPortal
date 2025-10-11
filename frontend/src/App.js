@@ -5,7 +5,8 @@ import HomePage from "./HomePage";
 import SignupPage from "./SignupPage";
 import LoginPage from "./LoginPage";
 import ForgotPasswordPage from "./ForgotPasswordPage";
-import DoctorDashboard from "./DoctorDashboard"; // Import dashboard
+import DoctorDashboard from "./DoctorDashboard"; 
+import MedicalStaffDashboard from "./MedicalStaffDashboard"; 
 import { fetchDoctors, fetchServices } from "./api.js";
 
 function App() {
@@ -51,6 +52,9 @@ function App() {
             
             {/* Doctor Dashboard Route */}
             <Route path="/DoctorDashboard" element={<DoctorDashboard />} />
+              {/* Medical Staff Dashboard */}
+            <Route path="/MedicalStaffDashboard" element={<MedicalStaffDashboard />} />
+          
           </Routes>
         </main>
       </div>
