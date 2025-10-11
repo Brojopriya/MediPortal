@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
@@ -6,9 +5,8 @@ import HomePage from "./HomePage";
 import SignupPage from "./SignupPage";
 import LoginPage from "./LoginPage";
 import ForgotPasswordPage from "./ForgotPasswordPage";
+import DoctorDashboard from "./DoctorDashboard"; // Import dashboard
 import { fetchDoctors, fetchServices } from "./api.js";
-import mediLogo from "./medi.png"; // path relative to App.js
-
 
 function App() {
   const [doctors, setDoctors] = useState([]);
@@ -35,35 +33,6 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <header className="App-header">
-          <h1>MediPortal</h1>
-        </header>
-        <header className="App-header">
-  <div className="header-container">
-    {/* Left side: Logo */}
-    <div className="logo">
-    <img src={mediLogo} alt="MediPortal Logo" className="logo-img" />
-      <span>MediPortal</span>
-    </div>
-
-    {/* Center: Navigation */}
-    <nav className="nav-links">
-      <a href="/">Home</a>
-      <a href="/doctors">Doctors</a>
-      <a href="/patients">Patients</a>
-      <a href="/appointments">Appointments</a>
-      <a href="/telemedicine">Telemedicine</a>
-    </nav>
-
-    {/* Right side: User actions */}
-    <div className="user-actions">
-      <a href="/login" className="btn-login">Login</a>
-      <a href="/signup" className="btn-signup">Sign Up</a>
-    </div>
-  </div>
-</header>
-
-
         <main>
           <Routes>
             <Route
@@ -79,6 +48,9 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            
+            {/* Doctor Dashboard Route */}
+            <Route path="/DoctorDashboard" element={<DoctorDashboard />} />
           </Routes>
         </main>
       </div>

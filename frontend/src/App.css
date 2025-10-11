@@ -1,11 +1,3 @@
-.App-header {
-  background-color: #2c3e50;
-  color: #fff;
-  padding: 0.5rem 2rem;
-  display: flex;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
 
 .header-container {
   width: 100%;
@@ -35,14 +27,14 @@
 
 .nav-links a {
   margin: 0 1rem;
-  color: #ecf0f1;
+  color: #04124d;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .nav-links a:hover {
-  color: #3498db;
+  color: #eaf59e;
 }
 
 .user-actions a {
@@ -56,17 +48,17 @@
 }
 
 .btn-login {
-  background-color: #3498db;
+  background-color: #063858;
 }
 
 .btn-login:hover {
-  background-color: #2980b9;
+  background-color: #2367b1;
 }
 
 .btn-signup {
-  background-color: #2ecc71;
+  background-color: #0d8e43;
 }
 
 .btn-signup:hover {
-  background-color: #27ae60;
+  background-color: #30b567;
 }

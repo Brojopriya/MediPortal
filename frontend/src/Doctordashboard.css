@@ -1,0 +1,267 @@
+/* -------------------- General Dashboard Layout -------------------- */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f6fa;
+    color: #333;
+  }
+  
+  /* -------------------- Sidebar -------------------- */
+  .sidebar {
+    width: 220px;
+    background-color: #0d1b2a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  
+  .sidebar h2 {
+    font-size: 1.6rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .sidebar nav ul li {
+    margin: 1rem 0;
+  }
+  
+  .sidebar nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    display: block;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  
+  .sidebar nav ul li a:hover {
+    background-color: #1b2a45;
+  }
+  
+  /* -------------------- Main Content -------------------- */
+  .dashboard-main {
+    flex: 1;
+    padding: 2rem 2.5rem;
+    overflow-x: auto;
+  }
+  
+  /* -------------------- Topbar -------------------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+  }
+  
+  .topbar h1 {
+    font-size: 1.6rem;
+  }
+  
+  .topbar .topbar-actions button {
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.2s;
+  }
+  
+  .topbar .topbar-actions .primary {
+    background-color: #2ecc71;
+    color: #fff;
+  }
+  
+  .topbar .topbar-actions .secondary {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  .topbar .topbar-actions button:hover {
+    opacity: 0.85;
+  }
+  
+  /* -------------------- Profile Form -------------------- */
+  .profile-page label {
+    display: block;
+    margin: 1rem 0 0.3rem;
+    font-weight: 600;
+  }
+  
+  .profile-page input,
+  .profile-page textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  
+  .profile-page textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  .profile-page button.primary {
+    margin-top: 1rem;
+    background-color: #2ecc71;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  
+  .profile-page button.primary:hover {
+    opacity: 0.9;
+  }
+  
+  /* -------------------- Tables -------------------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  
+  table th,
+  table td {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+  }
+  
+  table th {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  table tr:hover {
+    background-color: #f0f8ff;
+  }
+  
+  table button {
+    margin-right: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  
+  table button.primary {
+    background-color: #2ecc71;
+    color: #fff;
+  }
+  
+  table button:hover {
+    opacity: 0.85;
+  }
+  
+  /* -------------------- Prescriptions -------------------- */
+  .prescriptions-page select,
+  .prescriptions-page textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  
+  .prescriptions-page button.primary {
+    margin-top: 1rem;
+    background-color: #3498db;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* -------------------- Emergency -------------------- */
+  .emergency-page {
+    background-color: #ffe6e6;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #ff4d4d;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .emergency-page .emergency-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  /* -------------------- Misc / Cards -------------------- */
+  .card {
+    background-color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+  }
+  
+  h2 {
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+  }
+  
+  button {
+    transition: all 0.2s;
+  }
+  
+  button:hover {
+    opacity: 0.9;
+  }
+  
+  /* -------------------- Responsive -------------------- */
+  @media screen and (max-width: 900px) {
+    .dashboard-container {
+      flex-direction: column;
+    }
+  
+    .sidebar {
+      width: 100%;
+      height: auto;
+      padding: 1rem;
+      flex-direction: row;
+      justify-content: space-around;
+    }
+  
+    .dashboard-main {
+      padding: 1rem;
+    }
+  
+    table th, table td {
+      font-size: 0.85rem;
+    }
+  }
+  
