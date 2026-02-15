@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 // App.js (or whichever file)
 import mediLogo from "./medi.png";
@@ -26,12 +27,32 @@ const HomePage = () => {
       );
   }, []);
 
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      setCurrentUser(u);
+    } catch (err) {
+      setCurrentUser(null);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    navigate('/');
+    window.location.reload();
+  };
+
   return (
     <div className="home-container">
       {/* Header / Nav */}
       <header className="site-header">
         <div className="header-inner">
-          <div className="logo-area" onClick={() => (window.location.href = "/")}>
+          <div className="logo-area" onClick={() => navigate('/') }>
           <img src={mediLogo} alt="MediPortal logo" className="logo-img" />
             <span className="brand">MediPortal</span>
           </div>
@@ -45,12 +66,27 @@ const HomePage = () => {
           </nav>
 
           <div className="header-actions">
-            <button className="secondary" onClick={() => (window.location.href = "/login")}>
-        Login
-      </button>
-      <button className="secondary" onClick={() => (window.location.href = "/signup")}>
-        Sign Up
-      </button>
+            {currentUser ? (
+              <>
+                <span style={{ marginRight: 12, fontSize: 14 }}>Hi, {currentUser.name.split(' ')[0]}</span>
+                <button
+                  className="secondary"
+                  onClick={() => {
+                    if (currentUser.role === 'DOCTOR') navigate('/DoctorDashboard');
+                    else if (currentUser.role === 'STAFF') navigate('/MedicalStaffDashboard');
+                    else navigate('/');
+                  }}
+                >
+                  Dashboard
+                </button>
+                <button className="secondary" onClick={handleLogout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <button className="secondary" onClick={() => navigate('/login')}>Login</button>
+                <button className="secondary" onClick={() => navigate('/signup')}>Sign Up</button>
+              </>
+            )}
           </div>
         </div>
       </header>

@@ -1,8 +1,11 @@
 // src/SignupPage.js
 import React, { useState } from "react";
 import "./Auth.css";
+import { signup } from "./api.js";
+import { useNavigate } from "react-router-dom";
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,35 +29,36 @@ const SignupPage = () => {
       return;
     }
 
-    // Optional: Phone number validation (basic)
+    // Phone number validation
     const phoneRegex = /^[0-9]{10,15}$/;
     if (!phoneRegex.test(formData.phone)) {
       alert("Please enter a valid phone number (10-15 digits).");
       return;
     }
 
-    // Send data to backend
     try {
-      await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          role: formData.role,
-          password: formData.password,
-        }),
+      const response = await signup({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        password: formData.password,
       });
+
+      if (!response.success) {
+        alert(response.message || "Signup failed");
+        return;
+      }
 
       if (formData.role === "DOCTOR" || formData.role === "STAFF") {
         alert("Your account is pending admin approval.");
       } else {
         alert("Signup successful! You can now login.");
+        navigate("/login"); // redirect to login page
       }
     } catch (error) {
-      console.error(error);
-      alert("Signup failed.");
+      console.error("Signup error:", error);
+      alert("Signup failed. Please try again.");
     }
   };
 
