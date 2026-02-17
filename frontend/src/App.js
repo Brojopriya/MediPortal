@@ -6,7 +6,9 @@ import SignupPage from "./SignupPage";
 import LoginPage from "./LoginPage";
 import ForgotPasswordPage from "./ForgotPasswordPage";
 import DoctorDashboard from "./DoctorDashboard"; 
-import MedicalStaffDashboard from "./MedicalStaffDashboard"; 
+import MedicalStaffDashboard from "./MedicalStaffDashboard";
+import PatientDashboard from "./PatientDashboard";
+import NurseDashboard from "./NurseDashboard";
 import { fetchDoctors, fetchServices } from "./api.js";
 
 function App() {
@@ -50,10 +52,11 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             
-            {/* Doctor Dashboard Route */}
-            <Route path="/DoctorDashboard" element={<DoctorDashboard />} />
-              {/* Medical Staff Dashboard */}
-            <Route path="/MedicalStaffDashboard" element={<MedicalStaffDashboard />} />
+            {/* Dashboard Routes with nested paths */}
+            <Route path="/DoctorDashboard/*" element={<DoctorDashboard />} />
+            <Route path="/MedicalStaffDashboard/*" element={<MedicalStaffDashboard />} />
+            <Route path="/PatientDashboard/*" element={<PatientDashboard />} />
+            <Route path="/NurseDashboard/*" element={<NurseDashboard />} />
           
           </Routes>
         </main>

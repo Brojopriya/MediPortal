@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../MedicalStaffDashboard.css";
+import "../NurseDashboard.css";
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -10,19 +10,21 @@ const Profile = () => {
     gender: "",
     address: "",
     department: "",
-    role: "",
+    shift: "",
+    specialization: "",
+    licenseNumber: "",
     employeeId: "",
     joiningDate: "",
-    shift: "",
-    qualification: "",
+    qualifications: "",
     experience: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
+    // Fetch nurse profile from backend
     const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/medicalstaff/me", {
+    fetch("http://localhost:5001/api/nurses/me", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -36,12 +38,13 @@ const Profile = () => {
       .catch((err) => console.log("Error fetching profile:", err));
   }, []);
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
 
   const handleSave = () => {
     const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/medicalstaff/update", {
+    fetch("http://localhost:5001/api/nurses/profile", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -167,24 +170,6 @@ const Profile = () => {
           <h3>Professional Information</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Role</label>
-              <select
-                name="role"
-                value={profile.role}
-                onChange={handleChange}
-                disabled={!isEditing}
-              >
-                <option value="">Select Role</option>
-                <option value="Lab Technician">Lab Technician</option>
-                <option value="Pharmacist">Pharmacist</option>
-                <option value="Radiologist">Radiologist</option>
-                <option value="Receptionist">Receptionist</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div className="form-group">
               <label>Department</label>
               <select
                 name="department"
@@ -193,12 +178,14 @@ const Profile = () => {
                 disabled={!isEditing}
               >
                 <option value="">Select Department</option>
-                <option value="Laboratory">Laboratory</option>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="Radiology">Radiology</option>
-                <option value="Administration">Administration</option>
-                <option value="Front Desk">Front Desk</option>
-                <option value="Other">Other</option>
+                <option value="General Ward">General Ward</option>
+                <option value="ICU">ICU</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Surgery">Surgery</option>
+                <option value="Maternity">Maternity</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Orthopedics">Orthopedics</option>
               </select>
             </div>
 
@@ -214,8 +201,30 @@ const Profile = () => {
                 <option value="Morning">Morning (6 AM - 2 PM)</option>
                 <option value="Evening">Evening (2 PM - 10 PM)</option>
                 <option value="Night">Night (10 PM - 6 AM)</option>
-                <option value="General">General (9 AM - 5 PM)</option>
+                <option value="Rotating">Rotating</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label>Specialization</label>
+              <input
+                name="specialization"
+                value={profile.specialization}
+                onChange={handleChange}
+                disabled={!isEditing}
+                placeholder="Enter your specialization"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>License Number</label>
+              <input
+                name="licenseNumber"
+                value={profile.licenseNumber}
+                onChange={handleChange}
+                disabled={!isEditing}
+                placeholder="License number"
+              />
             </div>
 
             <div className="form-group">
@@ -245,8 +254,8 @@ const Profile = () => {
           <div className="form-group full-width">
             <label>Qualifications</label>
             <textarea
-              name="qualification"
-              value={profile.qualification}
+              name="qualifications"
+              value={profile.qualifications}
               onChange={handleChange}
               disabled={!isEditing}
               placeholder="List your qualifications and certifications"

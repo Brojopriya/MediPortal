@@ -42,6 +42,8 @@ const LoginPage = () => {
         const role = data.data.user?.role || 'PATIENT';
         if (role === 'DOCTOR') navigate('/DoctorDashboard');
         else if (role === 'STAFF') navigate('/MedicalStaffDashboard');
+        else if (role === 'NURSE') navigate('/NurseDashboard');
+        else if (role === 'PATIENT') navigate('/PatientDashboard');
         else navigate('/');
       }
     } catch (error) {

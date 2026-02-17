@@ -47,6 +47,16 @@ const HomePage = () => {
     window.location.reload();
   };
 
+  const handleDashboard = () => {
+    if (currentUser) {
+      if (currentUser.role === 'DOCTOR') navigate('/DoctorDashboard');
+      else if (currentUser.role === 'STAFF') navigate('/MedicalStaffDashboard');
+      else if (currentUser.role === 'NURSE') navigate('/NurseDashboard');
+      else if (currentUser.role === 'PATIENT') navigate('/PatientDashboard');
+      else navigate('/');
+    }
+  };
+
   return (
     <div className="home-container">
       {/* Header / Nav */}
@@ -59,23 +69,22 @@ const HomePage = () => {
 
           <nav className="main-nav">
             <a href="/">Home</a>
+            <a href="#services">Services</a>
             <a href="#doctors">Doctors</a>
-            <a href="#emergency">Emergency</a>
-            <a href="/telemedicine">Telemedicine</a>
-            <a href="#services">Our Services</a>
+            <a href="#for-patients">For Patients</a>
+            <a href="#for-professionals">For Professionals</a>
+            <a href="#contact">Contact</a>
           </nav>
 
           <div className="header-actions">
             {currentUser ? (
               <>
-                <span style={{ marginRight: 12, fontSize: 14 }}>Hi, {currentUser.name.split(' ')[0]}</span>
+                <span style={{ marginRight: 12, fontSize: 14, fontWeight: 500 }}>
+                  Hi, {currentUser.name.split(' ')[0]}
+                </span>
                 <button
                   className="secondary"
-                  onClick={() => {
-                    if (currentUser.role === 'DOCTOR') navigate('/DoctorDashboard');
-                    else if (currentUser.role === 'STAFF') navigate('/MedicalStaffDashboard');
-                    else navigate('/');
-                  }}
+                  onClick={handleDashboard}
                 >
                   Dashboard
                 </button>
@@ -84,7 +93,7 @@ const HomePage = () => {
             ) : (
               <>
                 <button className="secondary" onClick={() => navigate('/login')}>Login</button>
-                <button className="secondary" onClick={() => navigate('/signup')}>Sign Up</button>
+                <button className="primary" onClick={() => navigate('/signup')}>Sign Up</button>
               </>
             )}
           </div>
@@ -100,8 +109,8 @@ const HomePage = () => {
             and provides telemedicine — fast, secure, and reliable.
           </p>
           <div className="hero-cta">
-            <button className="primary" onClick={() => (window.location.href = "/appointments")}>
-              Book Now
+            <button className="primary" onClick={() => navigate('/signup')}>
+              Book Appointment
             </button>
             <button className="ghost" onClick={() => (window.location.href = "#services")}>
               View Services
@@ -130,10 +139,10 @@ const HomePage = () => {
       {/* Quick Emergency strip */}
       <section id="emergency" className="emergency-strip">
         <div>
-          <strong>EMERGENCY:</strong> Call <a href="tel:+123456789">+1 234 567 89</a> — Ambulance / ER open 24×7
+          <strong>🚨 EMERGENCY:</strong> Call <a href="tel:+1234567890">+1 234 567 890</a> — Ambulance / ER open 24×7
         </div>
         <div>
-          <button className="emergency-btn" onClick={() => (window.location.href = "/emergency")}>
+          <button className="emergency-btn" onClick={() => alert('Emergency services: Call +1 234 567 890 immediately!')}>
             Get Help Now
           </button>
         </div>
@@ -175,7 +184,7 @@ const HomePage = () => {
                 <p className="muted small">Location: {d.location}</p>
                 <div className="doctor-actions">
                   <button onClick={() => (window.location.href = `/doctors/${d.id}`)}>Profile</button>
-                  <button className="primary" onClick={() => (window.location.href = "/appointments")}>Book</button>
+                  <button className="primary" onClick={() => navigate('/signup')}>Book</button>
                 </div>
               </div>
             </article>
@@ -183,8 +192,84 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* For Patients Section */}
+      <section id="for-patients" className="section user-section">
+        <h2>For Patients</h2>
+        <p className="section-intro">Access quality healthcare from the comfort of your home</p>
+        <div className="user-features-grid">
+          <div className="user-feature">
+            <div className="feature-icon">📅</div>
+            <h3>Book Appointments</h3>
+            <p>Schedule appointments with specialist doctors at your convenience</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Get Started</button>
+          </div>
+          <div className="user-feature">
+            <div className="feature-icon">📋</div>
+            <h3>Medical Records</h3>
+            <p>Access your complete medical history, prescriptions, and reports in one place</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>View Records</button>
+          </div>
+          <div className="user-feature">
+            <div className="feature-icon">💻</div>
+            <h3>Teleconsultation</h3>
+            <p>Connect with doctors online through secure video consultations</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Start Consultation</button>
+          </div>
+          <div className="user-feature">
+            <div className="feature-icon">💊</div>
+            <h3>Prescriptions</h3>
+            <p>Get digital prescriptions and track your medications</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Manage Meds</button>
+          </div>
+        </div>
+      </section>
+
+      {/* For Healthcare Professionals Section */}
+      <section id="for-professionals" className="section user-section alt">
+        <h2>For Healthcare Professionals</h2>
+        <p className="section-intro">Streamline your practice with our comprehensive platform</p>
+        <div className="professionals-grid">
+          <div className="professional-card">
+            <div className="professional-icon">👨‍⚕️</div>
+            <h3>For Doctors</h3>
+            <ul>
+              <li>Manage patient appointments efficiently</li>
+              <li>Access comprehensive patient records</li>
+              <li>Prescribe medications digitally</li>
+              <li>Conduct teleconsultations</li>
+              <li>Track emergency cases</li>
+            </ul>
+            <button className="prof-btn" onClick={() => navigate('/login')}>Doctor Login</button>
+          </div>
+          <div className="professional-card">
+            <div className="professional-icon">👩‍⚕️</div>
+            <h3>For Nurses</h3>
+            <ul>
+              <li>Monitor patient vital signs</li>
+              <li>Manage ward operations</li>
+              <li>Administer medications</li>
+              <li>Track patient care schedules</li>
+              <li>Generate nursing reports</li>
+            </ul>
+            <button className="prof-btn" onClick={() => navigate('/login')}>Nurse Login</button>
+          </div>
+          <div className="professional-card">
+            <div className="professional-icon">🏥</div>
+            <h3>For Medical Staff</h3>
+            <ul>
+              <li>Process lab test orders</li>
+              <li>Manage appointment schedules</li>
+              <li>Handle administrative tasks</li>
+              <li>Coordinate with healthcare teams</li>
+              <li>Generate reports and analytics</li>
+            </ul>
+            <button className="prof-btn" onClick={() => navigate('/login')}>Staff Login</button>
+          </div>
+        </div>
+      </section>
+
       {/* Contact + Map */}
-      <section className="section contact-section">
+      <section id="contact" className="section contact-section">
         <div className="contact-left">
           <h2>Contact & Location</h2>
           <p>
@@ -205,9 +290,37 @@ const HomePage = () => {
 
       {/* Footer */}
       <footer className="site-footer">
-        <div>© {new Date().getFullYear()} MediPortal</div>
-        <div className="footer-links">
-          <a href="#services">Services</a> • <a href="#doctors">Doctors</a> • <a href="#emergency">Emergency</a>
+        <div className="footer-content">
+          <div className="footer-section">
+            <h4>MediPortal</h4>
+            <p>Your trusted healthcare companion - connecting patients with quality medical care.</p>
+          </div>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <div className="footer-links">
+              <a href="#services">Services</a>
+              <a href="#doctors">Doctors</a>
+              <a href="#for-patients">For Patients</a>
+              <a href="#for-professionals">For Professionals</a>
+              <a href="#emergency">Emergency</a>
+            </div>
+          </div>
+          <div className="footer-section">
+            <h4>Get Started</h4>
+            <div className="footer-links">
+              <a href="/signup">Sign Up</a>
+              <a href="/login">Login</a>
+              <a href="#contact">Contact Us</a>
+            </div>
+          </div>
+          <div className="footer-section">
+            <h4>Emergency Contact</h4>
+            <p><a href="tel:+1234567890" style={{color: '#e74c3c', fontWeight: 'bold'}}>📞 +1 234 567 890</a></p>
+            <p style={{fontSize: '0.9rem', marginTop: '0.5rem'}}>Available 24/7</p>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>© {new Date().getFullYear()} MediPortal. All rights reserved.</p>
         </div>
       </footer>
     </div>
