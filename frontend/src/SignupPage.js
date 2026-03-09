@@ -13,6 +13,14 @@ const SignupPage = () => {
     role: "PATIENT",
     password: "",
     confirmPassword: "",
+    department: "",
+    timeSchedule: "",
+    speciality: "",
+    post: "",
+    sector: "",
+    deptId: "",
+    wardId: "",
+    emergencySectorId: "",
   });
 
   const handleChange = (e) => {
@@ -36,6 +44,42 @@ const SignupPage = () => {
       return;
     }
 
+    const isProfessional = ["DOCTOR", "NURSE", "STAFF"].includes(formData.role);
+    if (isProfessional) {
+      if (!formData.department.trim() || !formData.timeSchedule.trim()) {
+        alert("Department and time schedule are required for professional signup.");
+        return;
+      }
+
+      if (formData.role === "DOCTOR" && !formData.speciality.trim()) {
+        alert("Speciality is required for doctor signup.");
+        return;
+      }
+
+      if (formData.role === "NURSE" && !formData.post.trim()) {
+        alert("Post is required for nurse signup.");
+        return;
+      }
+
+      if (formData.role === "STAFF" && !formData.sector.trim()) {
+        alert("Sector is required for staff signup.");
+        return;
+      }
+    }
+
+    const professionalDetails = isProfessional
+      ? {
+          department: formData.department,
+          timeSchedule: formData.timeSchedule,
+          speciality: formData.speciality || undefined,
+          post: formData.post || undefined,
+          sector: formData.sector || undefined,
+          deptId: formData.deptId || undefined,
+          wardId: formData.wardId || undefined,
+          emergencySectorId: formData.emergencySectorId || undefined,
+        }
+      : null;
+
     try {
       const response = await signup({
         name: formData.name,
@@ -43,6 +87,7 @@ const SignupPage = () => {
         phone: formData.phone,
         role: formData.role,
         password: formData.password,
+        professionalDetails,
       });
 
       if (!response.success) {
@@ -50,8 +95,9 @@ const SignupPage = () => {
         return;
       }
 
-      if (formData.role === "DOCTOR" || formData.role === "STAFF") {
-        alert("Your account is pending admin approval.");
+      if (formData.role === "DOCTOR" || formData.role === "STAFF" || formData.role === "NURSE") {
+        alert("Signup successful. Your professional account is pending admin approval.");
+        navigate("/login");
       } else {
         alert("Signup successful! You can now login.");
         navigate("/login"); // redirect to login page
@@ -98,8 +144,111 @@ const SignupPage = () => {
           <select name="role" value={formData.role} onChange={handleChange}>
             <option value="PATIENT">Patient</option>
             <option value="DOCTOR">Doctor</option>
+            <option value="NURSE">Nurse</option>
             <option value="STAFF">Staff</option>
           </select>
+
+          {(formData.role === "DOCTOR" || formData.role === "NURSE" || formData.role === "STAFF") && (
+            <>
+              <label>Department</label>
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder="e.g. Cardiology, Emergency, Diagnostics"
+                required
+              />
+
+              <label>Time Schedule</label>
+              <input
+                type="text"
+                name="timeSchedule"
+                value={formData.timeSchedule}
+                onChange={handleChange}
+                placeholder="e.g. Mon-Fri 08:00-16:00"
+                required
+              />
+
+              {formData.role === "DOCTOR" && (
+                <>
+                  <label>Speciality</label>
+                  <input
+                    type="text"
+                    name="speciality"
+                    value={formData.speciality}
+                    onChange={handleChange}
+                    placeholder="e.g. Cardiology"
+                    required
+                  />
+
+                  <label>Department ID (optional)</label>
+                  <input
+                    type="number"
+                    name="deptId"
+                    value={formData.deptId}
+                    onChange={handleChange}
+                    placeholder="e.g. 1"
+                  />
+                </>
+              )}
+
+              {formData.role === "NURSE" && (
+                <>
+                  <label>Post</label>
+                  <input
+                    type="text"
+                    name="post"
+                    value={formData.post}
+                    onChange={handleChange}
+                    placeholder="e.g. Senior Nurse"
+                    required
+                  />
+
+                  <label>Ward ID (optional)</label>
+                  <input
+                    type="number"
+                    name="wardId"
+                    value={formData.wardId}
+                    onChange={handleChange}
+                    placeholder="e.g. 2"
+                  />
+                </>
+              )}
+
+              {formData.role === "STAFF" && (
+                <>
+                  <label>Sector</label>
+                  <input
+                    type="text"
+                    name="sector"
+                    value={formData.sector}
+                    onChange={handleChange}
+                    placeholder="e.g. Laboratory, Admissions"
+                    required
+                  />
+
+                  <label>Department ID (optional)</label>
+                  <input
+                    type="number"
+                    name="deptId"
+                    value={formData.deptId}
+                    onChange={handleChange}
+                    placeholder="e.g. 3"
+                  />
+
+                  <label>Emergency Sector ID (optional)</label>
+                  <input
+                    type="number"
+                    name="emergencySectorId"
+                    value={formData.emergencySectorId}
+                    onChange={handleChange}
+                    placeholder="e.g. 1"
+                  />
+                </>
+              )}
+            </>
+          )}
 
           <label>Password</label>
           <input
@@ -124,6 +273,9 @@ const SignupPage = () => {
 
         <p>
           Already have an account? <a href="/login">Login</a>
+        </p>
+        <p>
+          <a href="/">← Back to Home</a>
         </p>
       </div>
     </div>

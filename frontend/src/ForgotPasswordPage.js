@@ -1,6 +1,7 @@
 // src/ForgotPasswordPage.js
 import React, { useState } from "react";
 import "./Auth.css";
+import { forgotPassword } from "./api";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -8,12 +9,11 @@ const ForgotPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
+      const result = await forgotPassword({ email });
+      if (!result?.success) {
+        alert(result?.message || "Failed to send reset link.");
+        return;
+      }
       alert("Password reset link sent (check your email).");
     } catch (error) {
       console.error(error);
@@ -38,6 +38,9 @@ const ForgotPasswordPage = () => {
 
         <p>
           Remembered password? <a href="/login">Login</a>
+        </p>
+        <p>
+          <a href="/">← Back to Home</a>
         </p>
       </div>
     </div>

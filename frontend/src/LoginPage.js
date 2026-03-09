@@ -33,7 +33,7 @@ const LoginPage = () => {
       console.log("LOGIN RESPONSE:", data);
 
       if (!data || !data.success) {
-        alert(data?.message || "Invalid credentials");
+        alert(data?.message || "Invalid credentials or account not approved yet.");
       } else {
         alert("Login successful!");
         localStorage.setItem("token", data.data.token);
@@ -76,13 +76,13 @@ const LoginPage = () => {
             required
           />
 
-          <div style={{ marginTop: 8, marginBottom: 12 }}>
-            <label style={{ fontSize: 13 }}>
+          <div className="auth-inline-row">
+            <label className="auth-inline-label">
               <input
                 type="checkbox"
                 checked={showPassword}
                 onChange={() => setShowPassword((s) => !s)}
-                style={{ marginRight: 6 }}
+                className="auth-inline-checkbox"
               />
               Show password
             </label>
@@ -91,7 +91,7 @@ const LoginPage = () => {
           <button type="submit">Login</button>
 
           {window.location.hostname === 'localhost' && (
-            <div style={{ marginTop: 8 }}>
+            <div className="auth-dev-row">
               <button
                 type="button"
                 onClick={() => setFormData({ email: 'brojopriyanag@gmail.com', password: 'nmnmnm12' })}
@@ -107,6 +107,12 @@ const LoginPage = () => {
         </p>
         <p>
           Don't have an account? <a href="/signup">Sign up</a>
+        </p>
+        <p>
+          Admin? <a href="/admin-login">Login here</a>
+        </p>
+        <p>
+          <a href="/">← Back to Home</a>
         </p>
       </div>
     </div>

@@ -15,6 +15,7 @@ import nurseRoutes from './src/routes/nurseRoutes.js';
 import appointmentRoutes from './src/routes/appointmentRoutes.js';
 import reportRoutes from './src/routes/reportRoutes.js';
 import telemedicineRoutes from './src/routes/telemedicineRoutes.js';
+import statsRoutes from './src/routes/statsRoutes.js';
 
 // Middleware
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
@@ -43,6 +44,7 @@ app.use('/api/nurses', nurseRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/telemedicine', telemedicineRoutes);
+app.use('/api/stats', statsRoutes);
 
 // ✅ 404 Middleware (catch-all for unknown routes)
 app.use((req, res, next) => {

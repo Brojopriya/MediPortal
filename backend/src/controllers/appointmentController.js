@@ -58,3 +58,50 @@ export const deleteAppointment = async (req, res) => {
     handleError(res, err);
   }
 };
+
+// Patient books an appointment with a doctor.
+export const bookAppointment = async (req, res) => {
+  try {
+    const { date, time, D_ID } = req.body;
+    if (!date || !time || !D_ID) {
+      return res.status(400).json(formatResponse(false, 'date, time, and D_ID are required'));
+    }
+
+    const appointment = await Appointment.create({
+      date,
+      time,
+      D_ID,
+      P_ID: req.user.id,
+    });
+
+    return res.status(201).json(formatResponse(true, 'Appointment booked successfully', appointment));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+// Patient sees their own appointments.
+export const getMyAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.findAll({
+      where: { P_ID: req.user.id },
+      order: [['date', 'DESC'], ['time', 'DESC']],
+    });
+    return res.json(formatResponse(true, 'My appointments fetched', appointments));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+// Doctor sees appointments assigned to them.
+export const getDoctorAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.findAll({
+      where: { D_ID: req.user.id },
+      order: [['date', 'DESC'], ['time', 'DESC']],
+    });
+    return res.json(formatResponse(true, 'Doctor appointments fetched', appointments));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};

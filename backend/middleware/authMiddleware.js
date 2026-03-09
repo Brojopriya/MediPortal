@@ -1,10 +1,11 @@
 // middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { User } from '../src/models/index.js';
 dotenv.config();
 
 // ✅ Middleware to verify token
-export const protect = (req, res, next) => {
+export const protect = async (req, res, next) => {
   let token = req.headers.authorization;
 
   if (!token) {
@@ -18,7 +19,17 @@ export const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // attach decoded user info to request
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: 'User not found.' });
+    }
+    req.user = {
+      id: user.id,
+      role: user.role,
+      approvalStatus: user.approvalStatus,
+      email: user.email,
+      name: user.name,
+    };
     next();
   } catch (err) {
     return res.status(403).json({ message: 'Invalid or expired token.' });

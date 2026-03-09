@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { fetchAllAppointments } from "../api";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
-    fetch("/api/appointments/staff") // backend endpoint for this staff
-      .then(res => res.json())
-      .then(data => setAppointments(data));
+    fetchAllAppointments()
+      .then((data) => setAppointments(Array.isArray(data?.data) ? data.data : []))
+      .catch(() => setAppointments([]));
   }, []);
 
   const handleStatus = (id, status) => {
-    fetch(`/api/appointments/${id}/status`, {
+    const token = localStorage.getItem("token");
+    fetch(`http://localhost:5001/api/appointments/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status }),
     }).then(() =>
       setAppointments(appointments.map(app => (app.id === id ? { ...app, status } : app)))
@@ -38,13 +40,13 @@ const Appointments = () => {
           <tbody>
             {appointments.map(app => (
               <tr key={app.id}>
-                <td>{app.patientName}</td>
+                <td>{app.P_ID || "-"}</td>
                 <td>{app.date}</td>
                 <td>{app.time}</td>
-                <td>{app.status}</td>
+                <td>{app.status || "SCHEDULED"}</td>
                 <td>
-                  <button onClick={() => handleStatus(app.id, "Accepted")}>Accept</button>
-                  <button onClick={() => handleStatus(app.id, "Rejected")}>Reject</button>
+                  <button onClick={() => handleStatus(app.id, "ACCEPTED")}>Accept</button>
+                  <button onClick={() => handleStatus(app.id, "REJECTED")}>Reject</button>
                 </td>
               </tr>
             ))}

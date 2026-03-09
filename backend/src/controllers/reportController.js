@@ -16,7 +16,8 @@ export const createReport = async (req, res) => {
 // Get all reports
 export const getAllReports = async (req, res) => {
   try {
-    const reports = await Report.findAll();
+    const whereClause = req.user?.role === 'PATIENT' ? { P_ID: req.user.id } : undefined;
+    const reports = await Report.findAll({ where: whereClause, order: [['date', 'DESC']] });
     res.json(formatResponse(true, 'All reports fetched', reports));
   } catch (err) {
     handleError(res, err);
@@ -28,6 +29,9 @@ export const getReportById = async (req, res) => {
   try {
     const report = await Report.findByPk(req.params.id);
     if (!report) return res.status(404).json(formatResponse(false, 'Report not found'));
+    if (req.user?.role === 'PATIENT' && report.P_ID !== req.user.id) {
+      return res.status(403).json(formatResponse(false, 'Forbidden: You can only view your own reports'));
+    }
     res.json(formatResponse(true, 'Report fetched', report));
   } catch (err) {
     handleError(res, err);

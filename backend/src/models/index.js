@@ -14,6 +14,7 @@ import AppointmentModel from './appointment.model.js';
 import DiagnosisModel from './diagnosis.model.js';
 import ReportModel from './report.model.js';
 import TelemedicineModel from './telemedicine.model.js';
+import SiteSettingModel from './siteSetting.model.js';
 
 // Join tables
 import NursePatientModel from './nurse_patient.model.js';
@@ -35,6 +36,7 @@ const Appointment = AppointmentModel(sequelize, DataTypes);
 const Diagnosis = DiagnosisModel(sequelize, DataTypes);
 const Report = ReportModel(sequelize, DataTypes);
 const Telemedicine = TelemedicineModel(sequelize, DataTypes);
+const SiteSetting = SiteSettingModel(sequelize, DataTypes);
 
 // Join tables
 const NursePatient = NursePatientModel(sequelize, DataTypes);
@@ -51,6 +53,9 @@ Doctor.belongsTo(User, { foreignKey: 'D_ID', targetKey: 'id' });
 
 User.hasOne(Nurse, { foreignKey: 'N_ID', sourceKey: 'id', onDelete: 'CASCADE' });
 Nurse.belongsTo(User, { foreignKey: 'N_ID', targetKey: 'id' });
+
+User.hasOne(MedicalStaff, { foreignKey: 'U_ID', sourceKey: 'id', onDelete: 'CASCADE' });
+MedicalStaff.belongsTo(User, { foreignKey: 'U_ID', targetKey: 'id' });
 
 // Hospital contains Departments
 Hospital.hasMany(Department, { foreignKey: 'H_ID' });
@@ -119,5 +124,6 @@ export {
   sequelize,
   User, Hospital, Department, Ward, EmergencySector,
   MedicalStaff, Patient, Doctor, Nurse, Appointment,
-  Diagnosis, Report, Telemedicine, NursePatient, StaffReport
+  Diagnosis, Report, Telemedicine, NursePatient, StaffReport,
+  SiteSetting
 };

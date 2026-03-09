@@ -3,28 +3,72 @@ import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 // App.js (or whichever file)
 import mediLogo from "./medi.png";
+import { fetchDoctors, fetchPublicStats, fetchSiteContent } from "./api";
 
 const HomePage = () => {
-  const [stats, setStats] = useState({ doctors: 0, patients: 0, appointments: 0 });
+  const [stats, setStats] = useState({
+    doctors: 0,
+    patients: 0,
+    appointments: 0,
+    departments: 0,
+    facilities: 0,
+    emergencyContact: "+1 234 567 890",
+    aboutHospital: "",
+  });
   const [doctors, setDoctors] = useState([]);
+  const [siteContent, setSiteContent] = useState({
+    heroTitle: "Care when you need it - from anywhere",
+    heroSubtitle:
+      "MediPortal connects you to verified doctors, manages appointments and medical records, and provides telemedicine - fast, secure, and reliable.",
+    contactAddress: "123 Health St., City",
+    contactPhone: "+1 234 567 89",
+    contactEmail: "info@mediportal.example",
+    footerAbout:
+      "Your trusted healthcare companion - connecting patients with quality medical care.",
+    emergencyContact: "+1 234 567 890",
+    aboutHospital: "",
+  });
 
   useEffect(() => {
-    // Fetch stats/doctors if endpoints exist; otherwise fallback to sample
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then((d) => setStats(d))
-      .catch(() => setStats({ doctors: 12, patients: 1240, appointments: 230 }));
-
-    fetch("/api/doctors")
-      .then((r) => r.json())
-      .then((d) => setDoctors(d))
+    fetchPublicStats()
+      .then((response) => {
+        const payload = response?.data || {};
+        setStats({
+          doctors: payload.doctors || 0,
+          patients: payload.patients || 0,
+          appointments: payload.appointments || 0,
+          departments: payload.departments || 0,
+          facilities: payload.facilities || 0,
+          emergencyContact: payload.emergencyContact || "+1 234 567 890",
+          aboutHospital: payload.aboutHospital || "",
+        });
+      })
       .catch(() =>
-        setDoctors([
-          { id: 1, name: "Dr. Aya Rahman", specialty: "Cardiology", location: "Block A" },
-          { id: 2, name: "Dr. Sami Ahmed", specialty: "General Surgery", location: "Block B" },
-          { id: 3, name: "Dr. Lina Karim", specialty: "Pediatrics", location: "Block C" },
-        ])
+        setStats({
+          doctors: 0,
+          patients: 0,
+          appointments: 0,
+          departments: 0,
+          facilities: 0,
+          emergencyContact: "+1 234 567 890",
+          aboutHospital: "",
+        })
       );
+
+    fetchDoctors()
+      .then((response) => {
+        const doctorList = Array.isArray(response?.data) ? response.data : [];
+        setDoctors(doctorList);
+      })
+      .catch(() => setDoctors([]));
+
+    fetchSiteContent()
+      .then((response) => {
+        if (response?.success && response?.data) {
+          setSiteContent((prev) => ({ ...prev, ...response.data }));
+        }
+      })
+      .catch(() => null);
   }, []);
 
   const navigate = useNavigate();
@@ -57,6 +101,20 @@ const HomePage = () => {
     }
   };
 
+  const handleBookAppointment = () => {
+    if (!currentUser) {
+      navigate('/signup');
+      return;
+    }
+
+    if (currentUser.role === 'PATIENT') {
+      navigate('/PatientDashboard/appointments');
+      return;
+    }
+
+    navigate('/login');
+  };
+
   return (
     <div className="home-container">
       {/* Header / Nav */}
@@ -72,14 +130,13 @@ const HomePage = () => {
             <a href="#services">Services</a>
             <a href="#doctors">Doctors</a>
             <a href="#for-patients">For Patients</a>
-            <a href="#for-professionals">For Professionals</a>
             <a href="#contact">Contact</a>
           </nav>
 
           <div className="header-actions">
             {currentUser ? (
               <>
-                <span style={{ marginRight: 12, fontSize: 14, fontWeight: 500 }}>
+                <span className="header-user-greeting">
                   Hi, {currentUser.name.split(' ')[0]}
                 </span>
                 <button
@@ -103,13 +160,13 @@ const HomePage = () => {
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
-          <h1>Care when you need it — from anywhere</h1>
+          <h1>{siteContent.heroTitle || "Care when you need it - from anywhere"}</h1>
           <p>
-            MediPortal connects you to verified doctors, manages appointments and medical records,
-            and provides telemedicine — fast, secure, and reliable.
+            {siteContent.heroSubtitle ||
+              "MediPortal connects you to verified doctors, manages appointments and medical records, and provides telemedicine - fast, secure, and reliable."}
           </p>
           <div className="hero-cta">
-            <button className="primary" onClick={() => navigate('/signup')}>
+            <button className="primary" onClick={handleBookAppointment}>
               Book Appointment
             </button>
             <button className="ghost" onClick={() => (window.location.href = "#services")}>
@@ -139,12 +196,57 @@ const HomePage = () => {
       {/* Quick Emergency strip */}
       <section id="emergency" className="emergency-strip">
         <div>
-          <strong>🚨 EMERGENCY:</strong> Call <a href="tel:+1234567890">+1 234 567 890</a> — Ambulance / ER open 24×7
+          <strong>Emergency Line:</strong> Call <a href={`tel:${siteContent.emergencyContact || stats.emergencyContact || "+1234567890"}`}>{siteContent.emergencyContact || stats.emergencyContact}</a> for urgent care and ambulance coordination.
         </div>
         <div>
-          <button className="emergency-btn" onClick={() => alert('Emergency services: Call +1 234 567 890 immediately!')}>
-            Get Help Now
+          <button className="emergency-btn" onClick={() => alert(`Emergency support is available 24/7. Call ${siteContent.emergencyContact || stats.emergencyContact || "+1 234 567 890"}.`)}>
+            Call Emergency Support
           </button>
+        </div>
+      </section>
+
+      <section className="section services">
+        <h2>Why Patients Trust MediPortal</h2>
+        <div className="services-grid">
+          <div className="feature">
+            <h3>Verified Care Teams</h3>
+            <p>Doctor, nurse, and staff accounts are reviewed through admin approval workflows.</p>
+          </div>
+          <div className="feature">
+            <h3>Secure Access</h3>
+            <p>Role-based access protects patient information and limits visibility by responsibility.</p>
+          </div>
+          <div className="feature">
+            <h3>Operational Visibility</h3>
+            <p>Appointments, records, and clinical coordination are tracked in one connected system.</p>
+          </div>
+          <div className="feature">
+            <h3>Continuous Availability</h3>
+            <p>Emergency routing and telemedicine support extend care beyond physical visits.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section services">
+        <h2>Hospital Overview</h2>
+        <p className="muted">{siteContent.aboutHospital || stats.aboutHospital || "Comprehensive clinical services across outpatient care, emergency response, and digital consultation."}</p>
+        <div className="services-grid">
+          <div className="feature">
+            <h3>{stats.departments}</h3>
+            <p>Clinical Departments</p>
+          </div>
+          <div className="feature">
+            <h3>{stats.facilities}</h3>
+            <p>Care Units & Facilities</p>
+          </div>
+          <div className="feature">
+            <h3>24/7 Operations</h3>
+            <p>Emergency & Critical Care</p>
+          </div>
+          <div className="feature">
+            <h3>Compliance Ready</h3>
+            <p>Controlled Access to Health Records</p>
+          </div>
         </div>
       </section>
 
@@ -153,20 +255,20 @@ const HomePage = () => {
         <h2>Our Services</h2>
         <div className="services-grid">
           <div className="feature">
-            <h3>Appointment Booking</h3>
-            <p>Quickly book in-person or teleconsultation visits with specialists.</p>
+            <h3>Scheduling Management</h3>
+            <p>Coordinate in-person and virtual appointments with specialty-based doctor matching.</p>
           </div>
           <div className="feature">
-            <h3>Telemedicine</h3>
-            <p>Secure video/voice consultations from home.</p>
+            <h3>Telemedicine Services</h3>
+            <p>Enable secure remote consultations with documented clinical follow-up.</p>
           </div>
           <div className="feature">
-            <h3>Medical Records</h3>
-            <p>Centralized electronic health records for authorized access.</p>
+            <h3>Electronic Health Records</h3>
+            <p>Maintain centralized patient histories for authorized, role-specific access.</p>
           </div>
           <div className="feature">
-            <h3>24/7 Support</h3>
-            <p>Help with scheduling, referrals and prescription queries.</p>
+            <h3>Care Coordination</h3>
+            <p>Support referrals, follow-up plans, and medication continuity across care teams.</p>
           </div>
         </div>
       </section>
@@ -177,14 +279,14 @@ const HomePage = () => {
         <div className="doctors-grid">
           {doctors.map((d) => (
             <article className="doctor-card" key={d.id}>
-              <div className="doctor-avatar">{d.name.split(" ").map(n => n[0]).slice(0,2).join("")}</div>
+              <div className="doctor-avatar">{(d.name || "Doctor").split(" ").map(n => n[0]).slice(0,2).join("")}</div>
               <div className="doctor-info">
-                <h4>{d.name}</h4>
-                <p className="muted">{d.specialty}</p>
-                <p className="muted small">Location: {d.location}</p>
+                <h4>{d.name || `Doctor #${d.id}`}</h4>
+                <p className="muted">{d.specialty || d.speciality || "General"}</p>
+                <p className="muted small">Location: {d.location || "Main Hospital"}</p>
                 <div className="doctor-actions">
                   <button onClick={() => (window.location.href = `/doctors/${d.id}`)}>Profile</button>
-                  <button className="primary" onClick={() => navigate('/signup')}>Book</button>
+                  <button className="primary" onClick={handleBookAppointment}>Book</button>
                 </div>
               </div>
             </article>
@@ -195,75 +297,31 @@ const HomePage = () => {
       {/* For Patients Section */}
       <section id="for-patients" className="section user-section">
         <h2>For Patients</h2>
-        <p className="section-intro">Access quality healthcare from the comfort of your home</p>
+        <p className="section-intro">A clear and secure patient experience from appointment to follow-up.</p>
         <div className="user-features-grid">
           <div className="user-feature">
-            <div className="feature-icon">📅</div>
+            <div className="feature-icon">APPT</div>
             <h3>Book Appointments</h3>
-            <p>Schedule appointments with specialist doctors at your convenience</p>
-            <button className="feature-btn" onClick={() => navigate('/signup')}>Get Started</button>
+            <p>Find available specialists and schedule consultations without phone-based delays.</p>
+            <button className="feature-btn" onClick={handleBookAppointment}>Schedule Now</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">📋</div>
+            <div className="feature-icon">EHR</div>
             <h3>Medical Records</h3>
-            <p>Access your complete medical history, prescriptions, and reports in one place</p>
-            <button className="feature-btn" onClick={() => navigate('/signup')}>View Records</button>
+            <p>Review diagnosis history, prescriptions, and reports from a single patient profile.</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Access Records</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">💻</div>
+            <div className="feature-icon">V-CARE</div>
             <h3>Teleconsultation</h3>
-            <p>Connect with doctors online through secure video consultations</p>
-            <button className="feature-btn" onClick={() => navigate('/signup')}>Start Consultation</button>
+            <p>Connect with clinicians online and continue care even when in-person visits are not possible.</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Start Session</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">💊</div>
+            <div className="feature-icon">RX</div>
             <h3>Prescriptions</h3>
-            <p>Get digital prescriptions and track your medications</p>
-            <button className="feature-btn" onClick={() => navigate('/signup')}>Manage Meds</button>
-          </div>
-        </div>
-      </section>
-
-      {/* For Healthcare Professionals Section */}
-      <section id="for-professionals" className="section user-section alt">
-        <h2>For Healthcare Professionals</h2>
-        <p className="section-intro">Streamline your practice with our comprehensive platform</p>
-        <div className="professionals-grid">
-          <div className="professional-card">
-            <div className="professional-icon">👨‍⚕️</div>
-            <h3>For Doctors</h3>
-            <ul>
-              <li>Manage patient appointments efficiently</li>
-              <li>Access comprehensive patient records</li>
-              <li>Prescribe medications digitally</li>
-              <li>Conduct teleconsultations</li>
-              <li>Track emergency cases</li>
-            </ul>
-            <button className="prof-btn" onClick={() => navigate('/login')}>Doctor Login</button>
-          </div>
-          <div className="professional-card">
-            <div className="professional-icon">👩‍⚕️</div>
-            <h3>For Nurses</h3>
-            <ul>
-              <li>Monitor patient vital signs</li>
-              <li>Manage ward operations</li>
-              <li>Administer medications</li>
-              <li>Track patient care schedules</li>
-              <li>Generate nursing reports</li>
-            </ul>
-            <button className="prof-btn" onClick={() => navigate('/login')}>Nurse Login</button>
-          </div>
-          <div className="professional-card">
-            <div className="professional-icon">🏥</div>
-            <h3>For Medical Staff</h3>
-            <ul>
-              <li>Process lab test orders</li>
-              <li>Manage appointment schedules</li>
-              <li>Handle administrative tasks</li>
-              <li>Coordinate with healthcare teams</li>
-              <li>Generate reports and analytics</li>
-            </ul>
-            <button className="prof-btn" onClick={() => navigate('/login')}>Staff Login</button>
+            <p>Track medication plans and receive digital prescriptions after consultation.</p>
+            <button className="feature-btn" onClick={() => navigate('/signup')}>Manage Plan</button>
           </div>
         </div>
       </section>
@@ -273,17 +331,23 @@ const HomePage = () => {
         <div className="contact-left">
           <h2>Contact & Location</h2>
           <p>
-            <strong>Address:</strong> 123 Health St., City<br />
-            <strong>Phone:</strong> <a href="tel:+123456789">+1 234 567 89</a><br />
-            <strong>Email:</strong> <a href="mailto:info@mediportal.example">info@mediportal.example</a>
+            <strong>Address:</strong> {siteContent.contactAddress || "123 Health St., City"}<br />
+            <strong>Phone:</strong> <a href={`tel:${siteContent.contactPhone || "+123456789"}`}>{siteContent.contactPhone || "+1 234 567 89"}</a><br />
+            <strong>Email:</strong> <a href={`mailto:${siteContent.contactEmail || "info@mediportal.example"}`}>{siteContent.contactEmail || "info@mediportal.example"}</a>
           </p>
           <p className="small muted">Open: Mon–Sat, 8:00 — 20:00 (ER 24×7)</p>
         </div>
 
         <div className="contact-right">
-          <div className="map-placeholder">
-            {/* Replace with an iframe or map component */}
-            <img src="/map-placeholder.png" alt="Map placeholder" />
+          <div className="feature">
+            <h3>Service Hours</h3>
+            <p className="muted small">Outpatient Services: Mon-Sat, 08:00-20:00</p>
+            <p className="muted small">Emergency Unit: 24/7</p>
+            <p className="muted small">Telemedicine: Daily, 09:00-22:00</p>
+          </div>
+          <div className="feature feature-gap-top">
+            <h3>Administrative Desk</h3>
+            <p className="muted small">For billing, admissions, and referral support, contact the front office during business hours.</p>
           </div>
         </div>
       </section>
@@ -293,7 +357,7 @@ const HomePage = () => {
         <div className="footer-content">
           <div className="footer-section">
             <h4>MediPortal</h4>
-            <p>Your trusted healthcare companion - connecting patients with quality medical care.</p>
+            <p>{siteContent.footerAbout || "Your trusted healthcare companion - connecting patients with quality medical care."}</p>
           </div>
           <div className="footer-section">
             <h4>Quick Links</h4>
@@ -301,7 +365,6 @@ const HomePage = () => {
               <a href="#services">Services</a>
               <a href="#doctors">Doctors</a>
               <a href="#for-patients">For Patients</a>
-              <a href="#for-professionals">For Professionals</a>
               <a href="#emergency">Emergency</a>
             </div>
           </div>
@@ -310,13 +373,14 @@ const HomePage = () => {
             <div className="footer-links">
               <a href="/signup">Sign Up</a>
               <a href="/login">Login</a>
+              <a href="/signup">Professional Signup</a>
               <a href="#contact">Contact Us</a>
             </div>
           </div>
           <div className="footer-section">
             <h4>Emergency Contact</h4>
-            <p><a href="tel:+1234567890" style={{color: '#e74c3c', fontWeight: 'bold'}}>📞 +1 234 567 890</a></p>
-            <p style={{fontSize: '0.9rem', marginTop: '0.5rem'}}>Available 24/7</p>
+            <p><a href={`tel:${siteContent.emergencyContact || "+1234567890"}`} className="footer-emergency-link">{siteContent.emergencyContact || "+1 234 567 890"}</a></p>
+            <p className="footer-emergency-note">Available 24/7</p>
           </div>
         </div>
         <div className="footer-bottom">

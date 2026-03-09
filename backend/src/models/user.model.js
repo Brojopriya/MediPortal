@@ -6,6 +6,12 @@ export default (sequelize, DataTypes) => {
     email: { type: DataTypes.STRING, unique: true, field: 'U_Email' },
     password: { type: DataTypes.STRING, field: 'U_Password' },
     role: { type: DataTypes.STRING, field: 'U_Role', defaultValue: 'PATIENT' },
+    approvalStatus: {
+      type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED'),
+      field: 'Approval_Status',
+      defaultValue: 'APPROVED'
+    },
+    professionalDetails: { type: DataTypes.TEXT('long'), field: 'Professional_Details' },
     address: { type: DataTypes.STRING, field: 'U_Address' },
     gender: { type: DataTypes.STRING, field: 'U_Gender' },
     profileUrl: { type: DataTypes.STRING, field: 'U_Profile' }

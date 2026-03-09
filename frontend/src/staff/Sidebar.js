@@ -41,6 +41,10 @@ const Sidebar = () => {
         </Link>
       </nav>
       <div className="sidebar-footer">
+        <Link to="/" className="nav-item">
+          <i className="icon">🏡</i>
+          <span>Home</span>
+        </Link>
         <button className="logout-btn" onClick={() => {
           localStorage.removeItem("token");
           window.location.href = "/login";
