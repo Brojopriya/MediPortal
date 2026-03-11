@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchAllAppointments } from "../api";
+import { fetchAllAppointments, updateAppointmentById } from "../api";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -11,14 +11,11 @@ const Appointments = () => {
   }, []);
 
   const handleStatus = (id, status) => {
-    const token = localStorage.getItem("token");
-    fetch(`http://localhost:5001/api/appointments/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ status }),
-    }).then(() =>
-      setAppointments(appointments.map(app => (app.id === id ? { ...app, status } : app)))
-    );
+    updateAppointmentById(id, { status }).then((res) => {
+      if (res?.success) {
+        setAppointments(appointments.map(app => (app.id === id ? { ...app, status } : app)));
+      }
+    });
   };
 
   return (

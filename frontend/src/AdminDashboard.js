@@ -80,7 +80,7 @@ const AdminDashboard = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    await Promise.all([loadPending(), loadUsers(), loadSummary(), loadSiteContent()]);
+    await Promise.allSettled([loadPending(), loadUsers(), loadSummary(), loadSiteContent()]);
     setLoading(false);
   };
 
@@ -99,7 +99,7 @@ const AdminDashboard = () => {
   }, [users, query, roleFilter, statusFilter]);
 
   const refreshData = async () => {
-    await Promise.all([loadPending(), loadUsers(), loadSummary()]);
+    await Promise.allSettled([loadPending(), loadUsers(), loadSummary()]);
   };
 
   const logout = () => {

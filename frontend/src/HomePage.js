@@ -6,6 +6,7 @@ import mediLogo from "./medi.png";
 import { fetchDoctors, fetchPublicStats, fetchSiteContent } from "./api";
 
 const HomePage = () => {
+  const [isLoadingHome, setIsLoadingHome] = useState(true);
   const [stats, setStats] = useState({
     doctors: 0,
     patients: 0,
@@ -30,9 +31,15 @@ const HomePage = () => {
   });
 
   useEffect(() => {
-    fetchPublicStats()
-      .then((response) => {
-        const payload = response?.data || {};
+    const loadHomeData = async () => {
+      const [statsRes, doctorsRes, siteRes] = await Promise.allSettled([
+        fetchPublicStats(),
+        fetchDoctors(),
+        fetchSiteContent(),
+      ]);
+
+      if (statsRes.status === "fulfilled") {
+        const payload = statsRes.value?.data || {};
         setStats({
           doctors: payload.doctors || 0,
           patients: payload.patients || 0,
@@ -42,33 +49,21 @@ const HomePage = () => {
           emergencyContact: payload.emergencyContact || "+1 234 567 890",
           aboutHospital: payload.aboutHospital || "",
         });
-      })
-      .catch(() =>
-        setStats({
-          doctors: 0,
-          patients: 0,
-          appointments: 0,
-          departments: 0,
-          facilities: 0,
-          emergencyContact: "+1 234 567 890",
-          aboutHospital: "",
-        })
-      );
+      }
 
-    fetchDoctors()
-      .then((response) => {
-        const doctorList = Array.isArray(response?.data) ? response.data : [];
+      if (doctorsRes.status === "fulfilled") {
+        const doctorList = Array.isArray(doctorsRes.value?.data) ? doctorsRes.value.data : [];
         setDoctors(doctorList);
-      })
-      .catch(() => setDoctors([]));
+      }
 
-    fetchSiteContent()
-      .then((response) => {
-        if (response?.success && response?.data) {
-          setSiteContent((prev) => ({ ...prev, ...response.data }));
-        }
-      })
-      .catch(() => null);
+      if (siteRes.status === "fulfilled" && siteRes.value?.success && siteRes.value?.data) {
+        setSiteContent((prev) => ({ ...prev, ...siteRes.value.data }));
+      }
+
+      setIsLoadingHome(false);
+    };
+
+    loadHomeData();
   }, []);
 
   const navigate = useNavigate();
@@ -97,6 +92,7 @@ const HomePage = () => {
       else if (currentUser.role === 'STAFF') navigate('/MedicalStaffDashboard');
       else if (currentUser.role === 'NURSE') navigate('/NurseDashboard');
       else if (currentUser.role === 'PATIENT') navigate('/PatientDashboard');
+      else if (currentUser.role === 'ADMIN') navigate('/AdminDashboard');
       else navigate('/');
     }
   };
@@ -115,6 +111,36 @@ const HomePage = () => {
     navigate('/login');
   };
 
+  const doctorCountForDisplay = Math.max(stats.doctors || 0, doctors.length || 0);
+  const activeSpecialties = new Set(
+    doctors
+      .map((d) => d.speciality || d.specialty)
+      .filter((value) => typeof value === "string" && value.trim())
+  ).size;
+
+  const liveHighlights = [
+    {
+      label: "Verified Doctors",
+      value: doctorCountForDisplay,
+      note: "Profiles visible to patients",
+    },
+    {
+      label: "Active Departments",
+      value: stats.departments || 0,
+      note: "Clinical units operating",
+    },
+    {
+      label: "Specialties Available",
+      value: activeSpecialties,
+      note: "From current doctor data",
+    },
+    {
+      label: "Total Patients",
+      value: stats.patients || 0,
+      note: "Registered in system",
+    },
+  ];
+
   return (
     <div className="home-container">
       {/* Header / Nav */}
@@ -126,7 +152,6 @@ const HomePage = () => {
           </div>
 
           <nav className="main-nav">
-            <a href="/">Home</a>
             <a href="#services">Services</a>
             <a href="#doctors">Doctors</a>
             <a href="#for-patients">For Patients</a>
@@ -176,7 +201,7 @@ const HomePage = () => {
 
           <div className="hero-stats">
             <div className="stat">
-              <div className="stat-num">{stats.doctors}</div>
+              <div className="stat-num">{doctorCountForDisplay}</div>
               <div className="stat-label">Doctors</div>
             </div>
             <div className="stat">
@@ -188,6 +213,10 @@ const HomePage = () => {
               <div className="stat-label">Appointments</div>
             </div>
           </div>
+
+          <p className="hero-live-note">
+            {isLoadingHome ? "Syncing live hospital metrics..." : "Live metrics are synced from backend services."}
+          </p>
         </div>
 
         
@@ -202,6 +231,20 @@ const HomePage = () => {
           <button className="emergency-btn" onClick={() => alert(`Emergency support is available 24/7. Call ${siteContent.emergencyContact || stats.emergencyContact || "+1 234 567 890"}.`)}>
             Call Emergency Support
           </button>
+        </div>
+      </section>
+
+      <section className="section services">
+        <h2>Live Operations Snapshot</h2>
+        <p className="section-intro">Current platform activity based on real-time backend data.</p>
+        <div className="snapshot-grid">
+          {liveHighlights.map((item) => (
+            <article key={item.label} className="snapshot-card">
+              <h3>{item.label}</h3>
+              <p className="snapshot-value">{item.value}</p>
+              <p className="snapshot-note">{item.note}</p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -275,17 +318,33 @@ const HomePage = () => {
 
       {/* Doctors & Locations */}
       <section id="doctors" className="section doctors-section">
-        <h2>Featured Doctors</h2>
+        <h2>Our Doctors</h2>
         <div className="doctors-grid">
           {doctors.map((d) => (
             <article className="doctor-card" key={d.id}>
-              <div className="doctor-avatar">{(d.name || "Doctor").split(" ").map(n => n[0]).slice(0,2).join("")}</div>
+              {d.profileUrl ? (
+                <img
+                  src={d.profileUrl}
+                  alt={d.name || "Doctor"}
+                  className="doctor-photo"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    const sibling = e.currentTarget.nextElementSibling;
+                    if (sibling && sibling.classList.contains("doctor-avatar-fallback")) {
+                      sibling.classList.remove("is-hidden");
+                    }
+                  }}
+                />
+              ) : null}
+              <div className={`doctor-avatar-fallback ${d.profileUrl ? "is-hidden" : ""}`}>
+                {(d.name || "Doctor").split(" ").map(n => n[0]).slice(0,2).join("")}
+              </div>
               <div className="doctor-info">
                 <h4>{d.name || `Doctor #${d.id}`}</h4>
                 <p className="muted">{d.specialty || d.speciality || "General"}</p>
                 <p className="muted small">Location: {d.location || "Main Hospital"}</p>
                 <div className="doctor-actions">
-                  <button onClick={() => (window.location.href = `/doctors/${d.id}`)}>Profile</button>
+                  <button onClick={() => navigate(`/doctors/${d.id}`)}>Profile</button>
                   <button className="primary" onClick={handleBookAppointment}>Book</button>
                 </div>
               </div>

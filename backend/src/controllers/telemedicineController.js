@@ -1,5 +1,5 @@
 // src/controllers/telemedicineController.js
-import Telemedicine from '../models/telemedicine.model.js';
+import { Telemedicine } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 

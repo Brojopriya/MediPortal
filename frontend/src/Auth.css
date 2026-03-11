@@ -90,6 +90,15 @@
   box-shadow: 0 10px 18px rgba(8, 74, 119, 0.22);
 }
 
+.auth-photo-preview {
+  width: 84px;
+  height: 84px;
+  margin-top: 8px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #cdd8e3;
+}
+
 .auth-card button:hover {
   transform: translateY(-1px);
 }

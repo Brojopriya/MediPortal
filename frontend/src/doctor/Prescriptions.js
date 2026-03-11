@@ -1,5 +1,5 @@
-// dashboard/Prescriptions.js
 import React, { useState, useEffect } from "react";
+import { createReport, fetchDoctorPatients } from "../api";
 
 const Prescriptions = () => {
   const [patients, setPatients] = useState([]);
@@ -7,17 +7,32 @@ const Prescriptions = () => {
   const [prescription, setPrescription] = useState("");
 
   useEffect(() => {
-    fetch("/api/doctor/patients")
-      .then(res => res.json())
-      .then(data => setPatients(data));
+    fetchDoctorPatients()
+      .then((res) => setPatients(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setPatients([]));
   }, []);
 
-  const handleSave = () => {
-    fetch(`/api/doctor/prescriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patientId: selectedPatient, prescription }),
-    }).then(() => alert("Prescription saved!"));
+  const handleSave = async () => {
+    if (!selectedPatient || !prescription.trim()) {
+      alert("Select a patient and write a prescription note.");
+      return;
+    }
+
+    const result = await createReport({
+      date: new Date().toISOString().slice(0, 10),
+      P_ID: Number(selectedPatient),
+      Test_ID: null,
+      S_ID: null,
+      status: "PENDING",
+    });
+
+    if (result?.success) {
+      alert("Prescription note saved as report request.");
+      setPrescription("");
+      return;
+    }
+
+    alert(result?.message || "Failed to save prescription.");
   };
 
   return (

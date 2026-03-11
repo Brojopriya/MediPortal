@@ -1,14 +1,23 @@
 // dashboard/Appointments.js
 import React, { useState, useEffect } from "react";
-import { createReport, fetchDoctorAppointments, startTelemedicineSession } from "../api";
+import {
+  createReport,
+  fetchDoctorAppointments,
+  startTelemedicineSession,
+  updateAppointmentById,
+} from "../api";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
 
-  useEffect(() => {
+  const loadAppointments = () => {
     fetchDoctorAppointments()
       .then((res) => setAppointments(Array.isArray(res?.data) ? res.data : []))
       .catch(() => setAppointments([]));
+  };
+
+  useEffect(() => {
+    loadAppointments();
   }, []);
 
   const handleStartTelemedicine = async (appointment) => {
@@ -32,6 +41,15 @@ const Appointments = () => {
     alert(result?.success ? "Test recommendation/report request sent." : result?.message || "Failed to recommend test.");
   };
 
+  const handleStatusUpdate = async (appointment, status) => {
+    const result = await updateAppointmentById(appointment.id, { status });
+    if (!result?.success) {
+      alert(result?.message || "Failed to update appointment status.");
+      return;
+    }
+    loadAppointments();
+  };
+
   return (
     <div className="appointments-page">
       <h2>My Appointments</h2>
@@ -47,10 +65,12 @@ const Appointments = () => {
         <tbody>
           {appointments.map(a => (
             <tr key={a.id}>
-              <td>{a.P_ID || "-"}</td>
+              <td>{a.patientName || (a.P_ID ? `Patient #${a.P_ID}` : "-")}</td>
               <td>{`${a.date || "-"} ${a.time || ""}`}</td>
               <td>{a.status || "SCHEDULED"}</td>
               <td>
+                <button onClick={() => handleStatusUpdate(a, "ACCEPTED")}>Accept</button>
+                <button onClick={() => handleStatusUpdate(a, "COMPLETED")}>Complete</button>
                 <button onClick={() => handleStartTelemedicine(a)}>Telemedicine</button>
                 <button onClick={() => handleRecommendTest(a)}>Recommend Test</button>
               </td>

@@ -37,9 +37,9 @@ html,
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(900px 450px at 12% -10%, rgba(24, 116, 193, 0.25), transparent 65%),
+    radial-gradient(900px 450px at 12% -10%, rgba(219, 223, 226, 0.25), transparent 65%),
     radial-gradient(700px 360px at 100% 20%, rgba(25, 169, 116, 0.2), transparent 62%),
-    linear-gradient(180deg, #edf5ff 0%, #f4f9ff 46%, #f8fcff 100%);
+    linear-gradient(180deg, #6d85a1 0%, #a3b6cd 46%, #f8fcff 100%);
   overflow-x: hidden;
 }
 
@@ -204,8 +204,8 @@ button.ghost:hover,
   margin: 26px auto 14px;
   padding: 28px 24px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.94), rgba(246, 251, 255, 0.82));
-  border: 1px solid rgba(15, 35, 56, 0.09);
+  background: linear-gradient(160deg, rgba(107, 146, 174, 0.94), rgba(246, 251, 255, 0.82));
+  border: 1px solid rgb(228, 231, 234);
   box-shadow: 0 22px 40px rgba(10, 29, 50, 0.14);
 }
 
@@ -232,6 +232,13 @@ button.ghost:hover,
   gap: 10px;
   margin-top: 18px;
   flex-wrap: wrap;
+}
+
+.hero-live-note {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-size: 0.92rem;
+  color: #345879;
 }
 
 .hero-stats {
@@ -314,9 +321,41 @@ button.ghost:hover,
 .user-features-grid,
 .professionals-grid,
 .doctors-grid,
+.snapshot-grid,
 .footer-content {
   display: grid;
   gap: 12px;
+}
+
+.snapshot-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.snapshot-card {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 35, 56, 0.1);
+  background: linear-gradient(165deg, rgba(18, 111, 183, 0.9), rgba(10, 79, 135, 0.92));
+  color: #ffffff;
+  padding: 15px;
+}
+
+.snapshot-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.snapshot-value {
+  margin: 8px 0 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.snapshot-note {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .services-grid {
@@ -329,7 +368,7 @@ button.ghost:hover,
 .doctor-card {
   border-radius: var(--radius-md);
   border: 1px solid rgba(15, 35, 56, 0.1);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(162, 190, 219, 0.92);
 }
 
 .feature {
@@ -372,6 +411,31 @@ button.ghost:hover,
   font-weight: 800;
 }
 
+.doctor-photo,
+.doctor-avatar-fallback {
+  width: 54px;
+  min-width: 54px;
+  height: 54px;
+  border-radius: 14px;
+}
+
+.doctor-photo {
+  object-fit: cover;
+  border: 1px solid rgba(15, 35, 56, 0.14);
+}
+
+.doctor-avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #1b7bc1, #0a4f87);
+  color: #fff;
+  font-weight: 800;
+}
+
+.doctor-avatar-fallback.is-hidden {
+  display: none;
+}
+
 .doctor-info h4 {
   margin: 1px 0 4px;
 }
@@ -380,6 +444,22 @@ button.ghost:hover,
   display: flex;
   gap: 8px;
   margin-top: 9px;
+}
+
+.doctor-public-section {
+  margin-top: 24px;
+}
+
+.doctor-public-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.doctor-public-card {
+  margin-top: 12px;
 }
 
 .user-section.alt {

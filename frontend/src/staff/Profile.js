@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../MedicalStaffDashboard.css";
+import { fetchStaffProfile, updateStaffProfile } from "../api";
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -21,13 +22,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/medicalstaff/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
+    fetchStaffProfile()
       .then((data) => {
         if (data.success) {
           setProfile(data.data);
@@ -40,16 +35,7 @@ const Profile = () => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
 
   const handleSave = () => {
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/medicalstaff/update", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(profile),
-    })
-      .then((res) => res.json())
+    updateStaffProfile(profile)
       .then((data) => {
         if (data.success) {
           alert("Profile updated successfully!");

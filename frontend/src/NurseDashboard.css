@@ -3,14 +3,14 @@
 .nurse-dashboard {
   display: flex;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #eef4ff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #2a72d8 0%, #174a9b 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -109,7 +109,7 @@
 
 .edit-btn {
   padding: 12px 24px;
-  background-color: #f5576c;
+  background-color: #1d6fd1;
   color: white;
   border: none;
   border-radius: 8px;
@@ -120,9 +120,9 @@
 }
 
 .edit-btn:hover {
-  background-color: #e04557;
+  background-color: #1758aa;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+  box-shadow: 0 4px 12px rgba(29, 111, 209, 0.35);
 }
 
 .profile-content {
@@ -187,8 +187,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #f5576c;
-  box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+  border-color: #1d6fd1;
+  box-shadow: 0 0 0 3px rgba(29, 111, 209, 0.12);
 }
 
 .form-group input:disabled,

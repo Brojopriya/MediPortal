@@ -1,5 +1,5 @@
 // src/controllers/userController.js
-import { Doctor, MedicalStaff, Nurse, User, sequelize } from '../models/index.js';
+import { Department, Doctor, EmergencySector, MedicalStaff, Nurse, Patient, User, Ward, sequelize } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 import bcrypt from 'bcryptjs';
@@ -41,6 +41,7 @@ const normalizeProfessionalDetails = (role, details) => {
   return {
     department: String(details.department || '').trim(),
     timeSchedule: String(details.timeSchedule || '').trim(),
+    profileUrl: details.profileUrl ? String(details.profileUrl).trim() : undefined,
     speciality: details.speciality ? String(details.speciality).trim() : undefined,
     post: details.post ? String(details.post).trim() : undefined,
     sector: details.sector ? String(details.sector).trim() : undefined,
@@ -50,41 +51,77 @@ const normalizeProfessionalDetails = (role, details) => {
   };
 };
 
-const upsertProfessionalProfile = async (role, userId, details, transaction) => {
+const upsertProfessionalProfile = async (role, userId, details, profileUrl, transaction) => {
+  if (role === 'PATIENT') {
+    // Ensure a Patient row always exists for every patient user
+    await Patient.upsert({ id: userId }, { transaction });
+    return;
+  }
+
   if (!NEEDS_ADMIN_APPROVAL.has(role) || !details) {
     return;
   }
 
+  const resolveDepartmentId = async (deptId) => {
+    if (!Number.isInteger(deptId)) return null;
+    const row = await Department.findByPk(deptId, { transaction });
+    return row ? deptId : null;
+  };
+
+  const resolveWardId = async (wardId) => {
+    if (!Number.isInteger(wardId)) return null;
+    const row = await Ward.findByPk(wardId, { transaction });
+    return row ? wardId : null;
+  };
+
+  const resolveEmergencySectorId = async (secId) => {
+    if (!Number.isInteger(secId)) return null;
+    const row = await EmergencySector.findByPk(secId, { transaction });
+    return row ? secId : null;
+  };
+
   if (role === 'DOCTOR') {
+    const deptId = await resolveDepartmentId(details.deptId);
     await Doctor.upsert({
       id: userId,
-      speciality: details.speciality,
-      department: details.department,
-      timeSchedule: details.timeSchedule,
-      Dept_ID: details.deptId,
+      speciality:      details.speciality,
+      department:      details.department,
+      timeSchedule:    details.timeSchedule,
+      Dept_ID:         deptId,
+      licenseNumber:   details.licenseNumber   || null,
+      experience:      details.experience      || null,
+      consultationFee: details.consultationFee || null,
+      availableDays:   details.availableDays   || null,
+      availableTime:   details.availableTime   || details.timeSchedule || null,
+      bio:             details.bio             || null,
+      qualification:   details.qualification   || null,
+      profileUrl:      profileUrl ? String(profileUrl).trim() : null,
     }, { transaction });
     return;
   }
 
   if (role === 'NURSE') {
+    const wardId = await resolveWardId(details.wardId);
     await Nurse.upsert({
-      id: userId,
-      post: details.post,
-      department: details.department,
-      timeSchedule: details.timeSchedule,
-      W_ID: details.wardId,
+      id:          userId,
+      post:        details.post,
+      department:  details.department,
+      timeSchedule:details.timeSchedule,
+      W_ID:        wardId,
     }, { transaction });
     return;
   }
 
   if (role === 'STAFF') {
+    const deptId = await resolveDepartmentId(details.deptId);
+    const emergencySectorId = await resolveEmergencySectorId(details.emergencySectorId);
     await MedicalStaff.upsert({
-      U_ID: userId,
-      sector: details.sector,
-      department: details.department,
-      timeSchedule: details.timeSchedule,
-      Dept_ID: details.deptId,
-      SEC_ID: details.emergencySectorId,
+      U_ID:        userId,
+      sector:      details.sector,
+      department:  details.department,
+      timeSchedule:details.timeSchedule,
+      Dept_ID:     deptId,
+      SEC_ID:      emergencySectorId,
     }, { transaction });
   }
 };
@@ -117,11 +154,23 @@ const validateProfessionalDetails = (role, details) => {
   return { valid: true };
 };
 
+const validateProfilePhotoByRole = (role, profileUrl) => {
+  if (role === 'PATIENT') {
+    return { valid: true };
+  }
+
+  if (!profileUrl || !String(profileUrl).trim()) {
+    return { valid: false, message: 'Profile photo URL is required for doctor, nurse, and staff accounts' };
+  }
+
+  return { valid: true };
+};
+
 // Register User
 export const registerUser = async (req, res) => {
   console.log("REGISTER BODY:", req.body);
   try {
-    let { name, email, password, role, phone, professionalDetails } = req.body;
+    let { name, email, password, role, phone, professionalDetails, profileUrl } = req.body;
     email = email?.trim().toLowerCase();
 
     // Validate required fields
@@ -151,6 +200,11 @@ export const registerUser = async (req, res) => {
       return res.status(400).json(formatResponse(false, validation.message));
     }
 
+    const photoValidation = validateProfilePhotoByRole(normalizedRole, profileUrl);
+    if (!photoValidation.valid) {
+      return res.status(400).json(formatResponse(false, photoValidation.message));
+    }
+
     const cleanProfessionalDetails = normalizeProfessionalDetails(normalizedRole, professionalDetails);
 
     const user = await sequelize.transaction(async (transaction) => {
@@ -162,9 +216,10 @@ export const registerUser = async (req, res) => {
         role: normalizedRole,
         approvalStatus,
         professionalDetails: cleanProfessionalDetails ? JSON.stringify(cleanProfessionalDetails) : null,
+        profileUrl: profileUrl ? String(profileUrl).trim() : null,
       }, { transaction });
 
-      await upsertProfessionalProfile(normalizedRole, createdUser.id, cleanProfessionalDetails, transaction);
+      await upsertProfessionalProfile(normalizedRole, createdUser.id, cleanProfessionalDetails, profileUrl, transaction);
       return createdUser;
     });
 
@@ -423,6 +478,13 @@ export const adminUpdateUserById = async (req, res) => {
     }
 
     const finalRole = updates.role || user.role;
+    const finalProfileUrl = updates.profileUrl !== undefined ? updates.profileUrl : user.profileUrl;
+
+    const photoValidation = validateProfilePhotoByRole(finalRole, finalProfileUrl);
+    if (!photoValidation.valid) {
+      return res.status(400).json(formatResponse(false, photoValidation.message));
+    }
+
     let cleanProfessionalDetails = null;
 
     if (NEEDS_ADMIN_APPROVAL.has(finalRole)) {
@@ -440,7 +502,7 @@ export const adminUpdateUserById = async (req, res) => {
 
     await sequelize.transaction(async (transaction) => {
       await user.update(updates, { transaction });
-      await upsertProfessionalProfile(finalRole, user.id, cleanProfessionalDetails, transaction);
+      await upsertProfessionalProfile(finalRole, user.id, cleanProfessionalDetails, finalProfileUrl, transaction);
     });
 
     return res.json(
@@ -526,7 +588,7 @@ export const getAdminSummary = async (req, res) => {
 // Admin: create user account directly from dashboard
 export const adminCreateUser = async (req, res) => {
   try {
-    let { name, email, password, role, phone, approvalStatus, professionalDetails } = req.body;
+    let { name, email, password, role, phone, approvalStatus, professionalDetails, profileUrl } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json(formatResponse(false, 'Name, email and password are required'));
@@ -542,6 +604,11 @@ export const adminCreateUser = async (req, res) => {
     const validation = validateProfessionalDetails(normalizedRole, professionalDetails);
     if (!validation.valid) {
       return res.status(400).json(formatResponse(false, validation.message));
+    }
+
+    const photoValidation = validateProfilePhotoByRole(normalizedRole, profileUrl);
+    if (!photoValidation.valid) {
+      return res.status(400).json(formatResponse(false, photoValidation.message));
     }
 
     const existing = await User.findOne({ where: { email: normalizedEmail } });
@@ -567,11 +634,12 @@ export const adminCreateUser = async (req, res) => {
         password: hashed,
         role: normalizedRole,
         phone,
+        profileUrl: profileUrl ? String(profileUrl).trim() : null,
         approvalStatus: normalizedApproval,
         professionalDetails: cleanProfessionalDetails ? JSON.stringify(cleanProfessionalDetails) : null,
       }, { transaction });
 
-      await upsertProfessionalProfile(normalizedRole, createdUser.id, cleanProfessionalDetails, transaction);
+      await upsertProfessionalProfile(normalizedRole, createdUser.id, cleanProfessionalDetails, profileUrl, transaction);
       return createdUser;
     });
 

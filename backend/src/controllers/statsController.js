@@ -7,6 +7,7 @@ import {
   Patient,
   Report,
   Telemedicine,
+  User,
   Ward,
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -25,8 +26,8 @@ export const getPublicStats = async (req, res) => {
       emergencyUnits,
       hospitals,
     ] = await Promise.all([
-      Doctor.count(),
-      Patient.count(),
+      User.count({ where: { role: 'DOCTOR', approvalStatus: 'APPROVED' } }),
+      User.count({ where: { role: 'PATIENT' } }),
       Appointment.count(),
       Department.count(),
       Ward.count(),

@@ -89,17 +89,6 @@ const LoginPage = () => {
           </div>
 
           <button type="submit">Login</button>
-
-          {window.location.hostname === 'localhost' && (
-            <div className="auth-dev-row">
-              <button
-                type="button"
-                onClick={() => setFormData({ email: 'brojopriyanag@gmail.com', password: 'nmnmnm12' })}
-              >
-                Use test account (dev)
-              </button>
-            </div>
-          )}
         </form>
 
         <p>

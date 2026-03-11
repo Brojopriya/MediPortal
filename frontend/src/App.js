@@ -12,6 +12,7 @@ import MedicalStaffDashboard from "./MedicalStaffDashboard";
 import PatientDashboard from "./PatientDashboard";
 import NurseDashboard from "./NurseDashboard";
 import ProtectedRoute from "./ProtectedRoute";
+import DoctorPublicProfile from "./DoctorPublicProfile";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/doctors/:id" element={<DoctorPublicProfile />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />

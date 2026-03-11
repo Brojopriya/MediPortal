@@ -14,7 +14,7 @@ export default (sequelize, DataTypes) => {
     professionalDetails: { type: DataTypes.TEXT('long'), field: 'Professional_Details' },
     address: { type: DataTypes.STRING, field: 'U_Address' },
     gender: { type: DataTypes.STRING, field: 'U_Gender' },
-    profileUrl: { type: DataTypes.STRING, field: 'U_Profile' }
+    profileUrl: { type: DataTypes.TEXT('long'), field: 'U_Profile' }
   }, {
     tableName: 'Users',
     timestamps: true

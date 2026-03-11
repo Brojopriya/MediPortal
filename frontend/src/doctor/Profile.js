@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../Doctordashboard.css";
+import { fetchDoctorProfile, updateDoctorProfile } from "../api";
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -18,22 +19,20 @@ const Profile = () => {
     availableDays: "",
     availableTime: "",
     bio: "",
+    profileUrl: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    // Fetch doctor profile from backend
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/doctors/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
+    fetchDoctorProfile()
       .then((data) => {
-        if (data.success) {
-          setProfile(data.data);
+        if (data?.success && data?.data) {
+          setProfile((prev) => ({
+            ...prev,
+            ...data.data,
+            specialty: data.data.specialty || data.data.speciality || prev.specialty,
+          }));
         }
       })
       .catch((err) => console.log("Error fetching profile:", err));
@@ -43,26 +42,37 @@ const Profile = () => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/doctors/profile", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(profile),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          alert("Profile updated successfully!");
-          setIsEditing(false);
-        } else {
-          alert("Failed to update profile");
-        }
-      })
-      .catch((err) => console.log("Error updating profile:", err));
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfile((prev) => ({ ...prev, profileUrl: String(reader.result || "") }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!String(profile.profileUrl || "").trim()) {
+      alert("Doctor profile photo URL is required.");
+      return;
+    }
+
+    const data = await updateDoctorProfile(profile);
+    if (data?.success) {
+      alert("Profile updated successfully!");
+      setIsEditing(false);
+    } else {
+      alert(data?.message || "Failed to update profile. Please check required fields and try again.");
+    }
   };
 
   return (
@@ -154,6 +164,42 @@ const Profile = () => {
               rows="3"
             />
           </div>
+
+          <div className="form-group full-width">
+            <label>Profile Photo *</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div className="form-group full-width">
+            <label>Photo Source (auto-filled)</label>
+            <input
+              name="profileUrl"
+              type="text"
+              value={profile.profileUrl}
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder="Upload an image to fill this field"
+            />
+          </div>
+
+          {profile.profileUrl && (
+            <div className="form-group full-width">
+              <label>Profile Photo Preview</label>
+              <img
+                src={profile.profileUrl}
+                alt="Doctor profile"
+                className="doctor-profile-preview"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="profile-section">

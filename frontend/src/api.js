@@ -37,10 +37,46 @@ const request = async (endpoint, options = {}) => {
 };
 
 export const fetchDoctors = async () => request("/doctors");
+export const fetchDoctorById = async (id) => request(`/doctors/${id}`);
+export const fetchDoctorProfile = async () => request("/doctors/me");
+export const updateDoctorProfile = async (data) =>
+  request("/doctors/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const fetchDoctorDashboardSummary = async () => request("/doctors/dashboard-summary");
+export const fetchDoctorPatients = async () => request("/doctors/my-patients");
 export const fetchPublicStats = async () => request("/stats");
 export const fetchPatientSummary = async () => request("/stats/patient-summary");
+export const fetchPatientProfile = async () => request("/patients/me");
+export const updatePatientProfile = async (data) =>
+  request("/patients/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const fetchNurseProfile = async () => request("/nurses/me");
+export const updateNurseProfile = async (data) =>
+  request("/nurses/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const fetchNurseDashboardSummary = async () => request("/nurses/dashboard-summary");
+export const fetchNursePatients = async () => request("/nurses/my-patients");
+export const fetchNurseSchedule = async () => request("/nurses/schedule");
+export const fetchStaffProfile = async () => request("/medicalstaff/me");
+export const updateStaffProfile = async (data) =>
+  request("/medicalstaff/update", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const fetchStaffStats = async () => request("/medicalstaff/stats");
 export const fetchMyAppointments = async () => request("/appointments/my");
 export const fetchDoctorAppointments = async () => request("/appointments/doctor");
+export const updateAppointmentById = async (id, data) =>
+  request(`/appointments/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 export const fetchAllAppointments = async () => request("/appointments");
 export const bookAppointment = async (data) =>
   request("/appointments/book", {

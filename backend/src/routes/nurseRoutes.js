@@ -4,13 +4,27 @@ import {
   getAllNurses,
   getNurseById,
   updateNurse,
-  deleteNurse
+  deleteNurse,
+  getMyNurseProfile,
+  updateMyNurseProfile,
+  getNurseDashboardSummary,
+  getMyNursePatients,
+  getNurseSchedule,
 } from '../controllers/nurseController.js';
-import { protect } from '../../middleware/authMiddleware.js';  
+import { protect, authorizeRoles } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// CRUD operations for nurses
+// Logged-in nurse's own profile
+router.get('/me',      protect, authorizeRoles('NURSE'), getMyNurseProfile);
+router.put('/me',      protect, authorizeRoles('NURSE'), updateMyNurseProfile);
+router.get('/profile', protect, authorizeRoles('NURSE'), getMyNurseProfile);
+router.put('/profile', protect, authorizeRoles('NURSE'), updateMyNurseProfile);
+router.get('/dashboard-summary', protect, authorizeRoles('NURSE'), getNurseDashboardSummary);
+router.get('/my-patients', protect, authorizeRoles('NURSE'), getMyNursePatients);
+router.get('/schedule', protect, authorizeRoles('NURSE'), getNurseSchedule);
+
+// CRUD (admin use)
 router.post('/', protect, createNurse);
 router.get('/', getAllNurses);
 router.get('/:id', getNurseById);

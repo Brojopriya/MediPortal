@@ -21,11 +21,72 @@ const SignupPage = () => {
     deptId: "",
     wardId: "",
     emergencySectorId: "",
+    profileUrl: "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxDimension = 1024;
+        let { width, height } = image;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          alert("Could not process image. Please try another file.");
+          return;
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+
+        // Convert to compressed JPEG data URL to avoid oversized request bodies.
+        const compressed = canvas.toDataURL("image/jpeg", 0.72);
+        if (compressed.length > 3_000_000) {
+          alert("Image is still too large after compression. Please upload a smaller image.");
+          return;
+        }
+
+        setFormData((prev) => ({ ...prev, profileUrl: compressed }));
+      };
+
+      image.onerror = () => {
+        alert("Could not read the selected image.");
+      };
+
+      image.src = String(reader.result || "");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -45,6 +106,11 @@ const SignupPage = () => {
     }
 
     const isProfessional = ["DOCTOR", "NURSE", "STAFF"].includes(formData.role);
+    if (isProfessional && !formData.profileUrl.trim()) {
+      alert("Profile photo is required for doctor, nurse, and staff signup.");
+      return;
+    }
+
     if (isProfessional) {
       if (!formData.department.trim() || !formData.timeSchedule.trim()) {
         alert("Department and time schedule are required for professional signup.");
@@ -87,6 +153,7 @@ const SignupPage = () => {
         phone: formData.phone,
         role: formData.role,
         password: formData.password,
+        profileUrl: formData.profileUrl || undefined,
         professionalDetails,
       });
 
@@ -147,6 +214,25 @@ const SignupPage = () => {
             <option value="NURSE">Nurse</option>
             <option value="STAFF">Staff</option>
           </select>
+
+          <label>
+            Profile Photo {["DOCTOR", "NURSE", "STAFF"].includes(formData.role)
+              ? "(required for doctor, nurse, staff)"
+              : "(optional for patient)"}
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            required={["DOCTOR", "NURSE", "STAFF"].includes(formData.role) && !formData.profileUrl}
+          />
+          {formData.profileUrl && (
+            <img
+              src={formData.profileUrl}
+              alt="Profile preview"
+              className="auth-photo-preview"
+            />
+          )}
 
           {(formData.role === "DOCTOR" || formData.role === "NURSE" || formData.role === "STAFF") && (
             <>

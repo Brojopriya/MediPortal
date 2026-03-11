@@ -1,5 +1,5 @@
 // src/controllers/reportController.js
-import Report from '../models/report.model.js';
+import { Report } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 

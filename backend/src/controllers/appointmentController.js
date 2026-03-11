@@ -1,5 +1,5 @@
 // src/controllers/appointmentController.js
-import Appointment from '../models/appointment.model.js';
+import { Appointment, User } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
@@ -100,7 +100,28 @@ export const getDoctorAppointments = async (req, res) => {
       where: { D_ID: req.user.id },
       order: [['date', 'DESC'], ['time', 'DESC']],
     });
-    return res.json(formatResponse(true, 'Doctor appointments fetched', appointments));
+
+    const patientIds = [...new Set(appointments.map((a) => a.P_ID).filter(Boolean))];
+    const patients = patientIds.length
+      ? await User.findAll({
+          where: { id: patientIds },
+          attributes: ['id', 'name', 'email', 'phone'],
+        })
+      : [];
+
+    const patientMap = new Map(patients.map((p) => [p.id, p]));
+    const payload = appointments.map((appointment) => {
+      const row = appointment.toJSON();
+      const patient = row.P_ID ? patientMap.get(row.P_ID) : null;
+      return {
+        ...row,
+        patientName: patient?.name || null,
+        patientEmail: patient?.email || null,
+        patientPhone: patient?.phone || null,
+      };
+    });
+
+    return res.json(formatResponse(true, 'Doctor appointments fetched', payload));
   } catch (err) {
     return handleError(res, err);
   }

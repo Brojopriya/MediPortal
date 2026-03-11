@@ -5,6 +5,7 @@ import Profile from "./staff/Profile";
 import Appointments from "./staff/Appointments";
 import LabTests from "./staff/LabTests";
 import "./MedicalStaffDashboard.css";
+import { fetchStaffStats } from "./api";
 
 // Dashboard Home Component
 const DashboardHome = () => {
@@ -17,14 +18,7 @@ const DashboardHome = () => {
   });
 
   React.useEffect(() => {
-    // Fetch summary stats from backend
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:5001/api/medicalstaff/stats", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
+    fetchStaffStats()
       .then((data) => {
         if (data.success) {
           setStats(data.data);

@@ -11,7 +11,7 @@ import "./Doctordashboard.css";
 
 const DoctorDashboard = () => {
   return (
-    <div className="dashboard-container">
+    <div className="doctor-dashboard dashboard-container">
       <Sidebar />
       <main className="dashboard-main">
         <Routes>

@@ -12,6 +12,7 @@ import userRoutes from './src/routes/userRoutes.js';
 import doctorRoutes from './src/routes/doctorRoutes.js';
 import patientRoutes from './src/routes/patientRoutes.js';
 import nurseRoutes from './src/routes/nurseRoutes.js';
+import medicalstaffRoutes from './src/routes/medicalstaffRoutes.js';
 import appointmentRoutes from './src/routes/appointmentRoutes.js';
 import reportRoutes from './src/routes/reportRoutes.js';
 import telemedicineRoutes from './src/routes/telemedicineRoutes.js';
@@ -33,14 +34,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ✅ Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Allow larger payloads because profile photos are currently sent as base64 data URLs.
+app.use(bodyParser.json({ limit: '12mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '12mb' }));
 
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/nurses', nurseRoutes);
+app.use('/api/medicalstaff', medicalstaffRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/telemedicine', telemedicineRoutes);
@@ -63,7 +66,7 @@ const startServer = async () => {
     console.log('✅ Database connected successfully!');
 
     // Sync all models (create tables if they don’t exist)
-    await sequelize.sync({ alter: true }); // { force: true } resets tables
+    await sequelize.sync({ alter: true }); // Safe mode: update schema without dropping data
     console.log('✅ All tables synced successfully!');
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
