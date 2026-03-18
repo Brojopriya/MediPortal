@@ -1,39 +1,69 @@
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5001/api";
+const CANDIDATE_API_BASES = [
+  process.env.REACT_APP_API_BASE,
+  "http://localhost:5001/api",
+  "http://localhost:5000/api",
+  "/api",
+].filter(Boolean);
+
+const API_BASES = [...new Set(CANDIDATE_API_BASES.map((base) => String(base).replace(/\/$/, "")))];
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const request = async (endpoint, options = {}) => {
-  try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-      ...(options.headers || {}),
-    };
-
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    const text = await res.text().catch(() => "");
-    let json = null;
-    try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      json = null;
-    }
-
-    if (!res.ok) {
-      throw new Error(json?.message || `Request failed with status ${res.status}`);
-    }
-
-    return json;
-  } catch (error) {
-    return { success: false, message: error.message, data: null };
+const parseResponseBody = async (response) => {
+  const text = await response.text().catch(() => "");
+  if (!text) {
+    return null;
   }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
+const request = async (endpoint, options = {}) => {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders(),
+    ...(options.headers || {}),
+  };
+
+  let lastNetworkError = null;
+
+  for (const base of API_BASES) {
+    try {
+      const res = await fetch(`${base}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      const json = await parseResponseBody(res);
+
+      if (!res.ok) {
+        return {
+          success: false,
+          message: json?.message || `Request failed with status ${res.status}`,
+          data: null,
+        };
+      }
+
+      return json;
+    } catch (error) {
+      lastNetworkError = error;
+    }
+  }
+
+  return {
+    success: false,
+    message:
+      lastNetworkError?.message ||
+      "Unable to connect to backend API. Check backend server and API base URL.",
+    data: null,
+  };
 };
 
 export const fetchDoctors = async () => request("/doctors");

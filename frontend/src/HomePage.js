@@ -30,37 +30,70 @@ const HomePage = () => {
     aboutHospital: "",
   });
 
+  const unwrapPayload = (response) => {
+    if (!response || typeof response !== "object") {
+      return null;
+    }
+
+    if (response.success === false) {
+      return null;
+    }
+
+    if (response.data !== undefined && response.data !== null) {
+      return response.data;
+    }
+
+    return response;
+  };
+
+  const toNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
   useEffect(() => {
     const loadHomeData = async () => {
-      const [statsRes, doctorsRes, siteRes] = await Promise.allSettled([
-        fetchPublicStats(),
-        fetchDoctors(),
-        fetchSiteContent(),
-      ]);
+      try {
+        const [statsRes, doctorsRes, siteRes] = await Promise.allSettled([
+          fetchPublicStats(),
+          fetchDoctors(),
+          fetchSiteContent(),
+        ]);
 
-      if (statsRes.status === "fulfilled") {
-        const payload = statsRes.value?.data || {};
-        setStats({
-          doctors: payload.doctors || 0,
-          patients: payload.patients || 0,
-          appointments: payload.appointments || 0,
-          departments: payload.departments || 0,
-          facilities: payload.facilities || 0,
-          emergencyContact: payload.emergencyContact || "+1 234 567 890",
-          aboutHospital: payload.aboutHospital || "",
-        });
+        if (statsRes.status === "fulfilled") {
+          const payload = unwrapPayload(statsRes.value) || {};
+          setStats({
+            doctors: toNumber(payload.doctors, 0),
+            patients: toNumber(payload.patients, 0),
+            appointments: toNumber(payload.appointments, 0),
+            departments: toNumber(payload.departments, 0),
+            facilities: toNumber(payload.facilities, 0),
+            emergencyContact: payload.emergencyContact || "+1 234 567 890",
+            aboutHospital: payload.aboutHospital || "",
+          });
+        }
+
+        if (doctorsRes.status === "fulfilled") {
+          const payload = unwrapPayload(doctorsRes.value);
+          const doctorList = Array.isArray(payload)
+            ? payload.map((doctor) => ({
+                ...doctor,
+                id: doctor?.id ?? doctor?.D_ID ?? doctor?.U_ID ?? null,
+                specialty: doctor?.specialty || doctor?.speciality || "General",
+              }))
+            : [];
+          setDoctors(doctorList);
+        }
+
+        if (siteRes.status === "fulfilled") {
+          const payload = unwrapPayload(siteRes.value);
+          if (payload && typeof payload === "object") {
+            setSiteContent((prev) => ({ ...prev, ...payload }));
+          }
+        }
+      } finally {
+        setIsLoadingHome(false);
       }
-
-      if (doctorsRes.status === "fulfilled") {
-        const doctorList = Array.isArray(doctorsRes.value?.data) ? doctorsRes.value.data : [];
-        setDoctors(doctorList);
-      }
-
-      if (siteRes.status === "fulfilled" && siteRes.value?.success && siteRes.value?.data) {
-        setSiteContent((prev) => ({ ...prev, ...siteRes.value.data }));
-      }
-
-      setIsLoadingHome(false);
     };
 
     loadHomeData();
@@ -162,7 +195,7 @@ const HomePage = () => {
             {currentUser ? (
               <>
                 <span className="header-user-greeting">
-                  Hi, {currentUser.name.split(' ')[0]}
+                  Hi, {String(currentUser.name || "User").split(' ')[0]}
                 </span>
                 <button
                   className="secondary"
@@ -190,14 +223,6 @@ const HomePage = () => {
             {siteContent.heroSubtitle ||
               "MediPortal connects you to verified doctors, manages appointments and medical records, and provides telemedicine - fast, secure, and reliable."}
           </p>
-          <div className="hero-cta">
-            <button className="primary" onClick={handleBookAppointment}>
-              Book Appointment
-            </button>
-            <button className="ghost" onClick={() => (window.location.href = "#services")}>
-              View Services
-            </button>
-          </div>
 
           <div className="hero-stats">
             <div className="stat">
@@ -212,6 +237,15 @@ const HomePage = () => {
               <div className="stat-num">{stats.appointments}</div>
               <div className="stat-label">Appointments</div>
             </div>
+          </div>
+
+          <div className="hero-cta">
+            <button className="primary" onClick={handleBookAppointment}>
+              Book Appointment
+            </button>
+            <button className="ghost" onClick={() => (window.location.href = "#services")}>
+              View Services
+            </button>
           </div>
 
           <p className="hero-live-note">
@@ -250,21 +284,22 @@ const HomePage = () => {
 
       <section className="section services">
         <h2>Why Patients Trust MediPortal</h2>
+        <p className="section-intro">Comprehensive healthcare solutions with verified professionals and secure access.</p>
         <div className="services-grid">
           <div className="feature">
-            <h3>Verified Care Teams</h3>
+            <h3>🎖️ Verified Care Teams</h3>
             <p>Doctor, nurse, and staff accounts are reviewed through admin approval workflows.</p>
           </div>
           <div className="feature">
-            <h3>Secure Access</h3>
+            <h3>🔐 Secure Access</h3>
             <p>Role-based access protects patient information and limits visibility by responsibility.</p>
           </div>
           <div className="feature">
-            <h3>Operational Visibility</h3>
+            <h3>📊 Operational Visibility</h3>
             <p>Appointments, records, and clinical coordination are tracked in one connected system.</p>
           </div>
           <div className="feature">
-            <h3>Continuous Availability</h3>
+            <h3>🕐 Continuous Availability</h3>
             <p>Emergency routing and telemedicine support extend care beyond physical visits.</p>
           </div>
         </div>
@@ -296,21 +331,22 @@ const HomePage = () => {
       {/* Services */}
       <section id="services" className="section services">
         <h2>Our Services</h2>
+        <p className="section-intro">A complete healthcare platform for patients, doctors, and medical staff.</p>
         <div className="services-grid">
           <div className="feature">
-            <h3>Scheduling Management</h3>
+            <h3>📅 Appointment Scheduling</h3>
             <p>Coordinate in-person and virtual appointments with specialty-based doctor matching.</p>
           </div>
           <div className="feature">
-            <h3>Telemedicine Services</h3>
+            <h3>💻 Telemedicine Services</h3>
             <p>Enable secure remote consultations with documented clinical follow-up.</p>
           </div>
           <div className="feature">
-            <h3>Electronic Health Records</h3>
+            <h3>📋 Electronic Health Records</h3>
             <p>Maintain centralized patient histories for authorized, role-specific access.</p>
           </div>
           <div className="feature">
-            <h3>Care Coordination</h3>
+            <h3>🤝 Care Coordination</h3>
             <p>Support referrals, follow-up plans, and medication continuity across care teams.</p>
           </div>
         </div>
@@ -319,9 +355,13 @@ const HomePage = () => {
       {/* Doctors & Locations */}
       <section id="doctors" className="section doctors-section">
         <h2>Our Doctors</h2>
+        <p className="section-intro">Browse and book consultations with our verified medical professionals.</p>
         <div className="doctors-grid">
-          {doctors.map((d) => (
-            <article className="doctor-card" key={d.id}>
+          {doctors.map((d, index) => {
+            const doctorId = d.id ?? d.D_ID ?? d.U_ID ?? null;
+
+            return (
+            <article className="doctor-card" key={doctorId || `${d.name || "doctor"}-${index}`}>
               {d.profileUrl ? (
                 <img
                   src={d.profileUrl}
@@ -340,16 +380,16 @@ const HomePage = () => {
                 {(d.name || "Doctor").split(" ").map(n => n[0]).slice(0,2).join("")}
               </div>
               <div className="doctor-info">
-                <h4>{d.name || `Doctor #${d.id}`}</h4>
+                <h4>{d.name || (doctorId ? `Doctor #${doctorId}` : "Doctor")}</h4>
                 <p className="muted">{d.specialty || d.speciality || "General"}</p>
                 <p className="muted small">Location: {d.location || "Main Hospital"}</p>
                 <div className="doctor-actions">
-                  <button onClick={() => navigate(`/doctors/${d.id}`)}>Profile</button>
+                  <button onClick={() => doctorId && navigate(`/doctors/${doctorId}`)} disabled={!doctorId}>Profile</button>
                   <button className="primary" onClick={handleBookAppointment}>Book</button>
                 </div>
               </div>
             </article>
-          ))}
+          )})}
         </div>
       </section>
 
@@ -359,25 +399,25 @@ const HomePage = () => {
         <p className="section-intro">A clear and secure patient experience from appointment to follow-up.</p>
         <div className="user-features-grid">
           <div className="user-feature">
-            <div className="feature-icon">APPT</div>
+            <div className="feature-icon">📅</div>
             <h3>Book Appointments</h3>
             <p>Find available specialists and schedule consultations without phone-based delays.</p>
             <button className="feature-btn" onClick={handleBookAppointment}>Schedule Now</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">EHR</div>
+            <div className="feature-icon">🗂️</div>
             <h3>Medical Records</h3>
             <p>Review diagnosis history, prescriptions, and reports from a single patient profile.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Access Records</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">V-CARE</div>
+            <div className="feature-icon">🎥</div>
             <h3>Teleconsultation</h3>
             <p>Connect with clinicians online and continue care even when in-person visits are not possible.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Start Session</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">RX</div>
+            <div className="feature-icon">💊</div>
             <h3>Prescriptions</h3>
             <p>Track medication plans and receive digital prescriptions after consultation.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Manage Plan</button>

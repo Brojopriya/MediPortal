@@ -193,6 +193,21 @@
   font-weight: 700;
 }
 
+.doctor-dashboard .prescriptions-page button.secondary {
+  background: #e6eef7;
+  color: #1b4463;
+}
+
+.doctor-dashboard .prescriptions-page button.danger {
+  background: #fbe4e4;
+  color: #972222;
+}
+
+.doctor-dashboard .prescriptions-page button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .doctor-dashboard td button:hover,
 .doctor-dashboard .prescriptions-page button:hover,
 .doctor-dashboard .emergency-btn:hover,
@@ -204,6 +219,7 @@
 
 .doctor-dashboard .prescriptions-page select,
 .doctor-dashboard .prescriptions-page textarea,
+.doctor-dashboard .prescriptions-page input,
 .doctor-dashboard .profile-page input,
 .doctor-dashboard .profile-page textarea,
 .doctor-dashboard .profile-page select,
@@ -216,6 +232,153 @@
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 0.94rem;
+}
+
+.doctor-dashboard .prescriptions-header p {
+  margin: 0;
+  color: var(--dd-muted);
+}
+
+.doctor-dashboard .prescription-form {
+  margin-top: 14px;
+}
+
+.doctor-dashboard .prescription-layout {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.doctor-dashboard .prescription-section {
+  border: 1px solid #dbe7f2;
+  border-radius: 12px;
+  background: #fcfeff;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.doctor-dashboard .prescription-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.doctor-dashboard .prescription-section-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #153b59;
+}
+
+.doctor-dashboard .prescription-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.doctor-dashboard .prescription-medicines-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.doctor-dashboard .medicine-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
+}
+
+.doctor-dashboard .simple-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.doctor-dashboard .simple-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doctor-dashboard .simple-row input {
+  margin-top: 0;
+}
+
+.doctor-dashboard .simple-row .danger {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.doctor-dashboard .medicine-row {
+  border: 1px solid #d7e4f1;
+  border-radius: 10px;
+  background: #f9fcff;
+  padding: 10px;
+}
+
+.doctor-dashboard .medicine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.doctor-dashboard .medicine-row .danger {
+  margin-top: 10px;
+}
+
+.doctor-dashboard .prescription-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.doctor-dashboard .prescription-preview {
+  position: sticky;
+  top: 12px;
+  border: 1px solid #d5e4f1;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f6fbff 0%, #ffffff 70%);
+  padding: 12px;
+}
+
+.doctor-dashboard .prescription-preview h3 {
+  margin: 0 0 10px;
+  color: #133f60;
+}
+
+.doctor-dashboard .prescription-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.doctor-dashboard .preview-chip {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #184766;
+  background: #e8f3fd;
+  border: 1px solid #d0e4f8;
+}
+
+.doctor-dashboard .prescription-preview-body {
+  margin: 0;
+  border: 1px dashed #c9dcef;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #223a4f;
+  white-space: pre-wrap;
 }
 
 .doctor-dashboard .profile-page {
@@ -298,5 +461,26 @@
 
   .doctor-dashboard .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .doctor-dashboard .prescription-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-dashboard .prescription-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-dashboard .prescription-preview {
+    position: static;
+  }
+
+  .doctor-dashboard .medicine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-dashboard .simple-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

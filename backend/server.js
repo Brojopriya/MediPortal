@@ -25,8 +25,28 @@ dotenv.config();
 const app = express();
 
 // ✅ CORS setup
+const configuredOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:3001")
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isAllowedDevOrigin = (origin) =>
+  /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+
 const corsOptions = {
-  origin: "http://localhost:3000", // React frontend URL
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (configuredOrigins.includes(origin) || isAllowedDevOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,

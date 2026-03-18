@@ -478,24 +478,33 @@ export const adminUpdateUserById = async (req, res) => {
     }
 
     const finalRole = updates.role || user.role;
+    const finalApprovalStatus = updates.approvalStatus || user.approvalStatus;
     const finalProfileUrl = updates.profileUrl !== undefined ? updates.profileUrl : user.profileUrl;
-
-    const photoValidation = validateProfilePhotoByRole(finalRole, finalProfileUrl);
-    if (!photoValidation.valid) {
-      return res.status(400).json(formatResponse(false, photoValidation.message));
-    }
 
     let cleanProfessionalDetails = null;
 
     if (NEEDS_ADMIN_APPROVAL.has(finalRole)) {
       const incoming = req.body.professionalDetails ?? parseProfessionalDetails(user.professionalDetails);
-      const validation = validateProfessionalDetails(finalRole, incoming);
-      if (!validation.valid) {
-        return res.status(400).json(formatResponse(false, validation.message));
+      const parsedIncoming = parseProfessionalDetails(incoming);
+
+      if (finalApprovalStatus === 'APPROVED') {
+        const validation = validateProfessionalDetails(finalRole, parsedIncoming);
+        if (!validation.valid) {
+          return res.status(400).json(
+            formatResponse(false, 'Professional details are required before approving this account')
+          );
+        }
+
+        const photoValidation = validateProfilePhotoByRole(finalRole, finalProfileUrl);
+        if (!photoValidation.valid) {
+          return res.status(400).json(
+            formatResponse(false, 'Profile photo URL is required before approving this account')
+          );
+        }
       }
 
-      cleanProfessionalDetails = normalizeProfessionalDetails(finalRole, incoming);
-      updates.professionalDetails = JSON.stringify(cleanProfessionalDetails);
+      cleanProfessionalDetails = normalizeProfessionalDetails(finalRole, parsedIncoming);
+      updates.professionalDetails = cleanProfessionalDetails ? JSON.stringify(cleanProfessionalDetails) : null;
     } else {
       updates.professionalDetails = null;
     }
@@ -601,15 +610,7 @@ export const adminCreateUser = async (req, res) => {
       return res.status(400).json(formatResponse(false, 'Invalid role value'));
     }
 
-    const validation = validateProfessionalDetails(normalizedRole, professionalDetails);
-    if (!validation.valid) {
-      return res.status(400).json(formatResponse(false, validation.message));
-    }
-
-    const photoValidation = validateProfilePhotoByRole(normalizedRole, profileUrl);
-    if (!photoValidation.valid) {
-      return res.status(400).json(formatResponse(false, photoValidation.message));
-    }
+    const parsedProfessionalDetails = parseProfessionalDetails(professionalDetails);
 
     const existing = await User.findOne({ where: { email: normalizedEmail } });
     if (existing) {
@@ -618,14 +619,35 @@ export const adminCreateUser = async (req, res) => {
 
     let normalizedApproval = String(approvalStatus || '').toUpperCase();
     if (!normalizedApproval) {
-      normalizedApproval = NEEDS_ADMIN_APPROVAL.has(normalizedRole) ? 'APPROVED' : 'APPROVED';
+      normalizedApproval = NEEDS_ADMIN_APPROVAL.has(normalizedRole) ? 'PENDING' : 'APPROVED';
     }
 
     if (!ALLOWED_APPROVALS.has(normalizedApproval)) {
       return res.status(400).json(formatResponse(false, 'Invalid approvalStatus value'));
     }
 
-    const cleanProfessionalDetails = normalizeProfessionalDetails(normalizedRole, professionalDetails);
+    let cleanProfessionalDetails = null;
+    let finalApprovalStatus = normalizedApproval;
+
+    if (NEEDS_ADMIN_APPROVAL.has(normalizedRole)) {
+      const hasProfileUrl = Boolean(profileUrl && String(profileUrl).trim());
+      const hasProfessionalDetails = Boolean(parsedProfessionalDetails);
+
+      if (hasProfessionalDetails) {
+        const validation = validateProfessionalDetails(normalizedRole, parsedProfessionalDetails);
+        if (!validation.valid) {
+          return res.status(400).json(formatResponse(false, validation.message));
+        }
+      }
+
+      cleanProfessionalDetails = normalizeProfessionalDetails(normalizedRole, parsedProfessionalDetails);
+
+      if (finalApprovalStatus === 'APPROVED' && (!hasProfileUrl || !cleanProfessionalDetails)) {
+        // Keep incomplete professional accounts pending until profile details are completed.
+        finalApprovalStatus = 'PENDING';
+      }
+    }
+
     const hashed = await bcrypt.hash(password, 10);
     const user = await sequelize.transaction(async (transaction) => {
       const createdUser = await User.create({
@@ -635,7 +657,7 @@ export const adminCreateUser = async (req, res) => {
         role: normalizedRole,
         phone,
         profileUrl: profileUrl ? String(profileUrl).trim() : null,
-        approvalStatus: normalizedApproval,
+        approvalStatus: finalApprovalStatus,
         professionalDetails: cleanProfessionalDetails ? JSON.stringify(cleanProfessionalDetails) : null,
       }, { transaction });
 

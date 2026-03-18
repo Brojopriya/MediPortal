@@ -258,7 +258,7 @@ const AdminDashboard = () => {
             )}
           </div>
         ) : tab === "users" ? (
-          <div className="admin-grid-2">
+          <div className="admin-user-layout">
             <div className="admin-panel">
               <h3 className="admin-section-title">All Users</h3>
               <div className="admin-toolbar">
@@ -324,37 +324,59 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="admin-panel">
+            <aside className="admin-user-sidebar">
+            <div className="admin-panel admin-create-user-panel">
               <h3 className="admin-section-title">Create User</h3>
-              <form onSubmit={handleCreateUser}>
-                <div className="admin-toolbar admin-toolbar-grid">
-                  <input className="admin-input" placeholder="Name" value={newUser.name} onChange={(e) => handleNewUserChange("name", e.target.value)} required />
-                  <input className="admin-input" type="email" placeholder="Email" value={newUser.email} onChange={(e) => handleNewUserChange("email", e.target.value)} required />
-                  <input className="admin-input" type="password" placeholder="Password" value={newUser.password} onChange={(e) => handleNewUserChange("password", e.target.value)} required />
-                  <select className="admin-select" value={newUser.role} onChange={(e) => handleNewUserChange("role", e.target.value)}>
-                    <option value="ADMIN">ADMIN</option>
-                    <option value="DOCTOR">DOCTOR</option>
-                    <option value="NURSE">NURSE</option>
-                    <option value="STAFF">STAFF</option>
-                    <option value="PATIENT">PATIENT</option>
-                  </select>
-                  <select className="admin-select" value={newUser.approvalStatus} onChange={(e) => handleNewUserChange("approvalStatus", e.target.value)}>
-                    <option value="PENDING">PENDING</option>
-                    <option value="APPROVED">APPROVED</option>
-                    <option value="REJECTED">REJECTED</option>
-                  </select>
-                  <input className="admin-input" placeholder="Phone" value={newUser.phone} onChange={(e) => handleNewUserChange("phone", e.target.value)} />
-                  <button className="admin-btn primary" type="submit">Create User</button>
-                </div>
-              </form>
+              <p className="admin-panel-subtitle">Add a new account with role and approval in one step.</p>
+              <form className="admin-create-form" onSubmit={handleCreateUser}>
+                <label className="admin-field-label">Full Name</label>
+                <input className="admin-input" placeholder="Enter full name" value={newUser.name} onChange={(e) => handleNewUserChange("name", e.target.value)} required />
 
-              <h3 className="admin-section-title admin-section-title-spaced">Role Overview</h3>
-              <p><span className="admin-chip">Admins</span> {summary.byRole?.admins || 0}</p>
-              <p><span className="admin-chip">Doctors</span> {summary.byRole?.doctors || 0}</p>
-              <p><span className="admin-chip">Nurses</span> {summary.byRole?.nurses || 0}</p>
-              <p><span className="admin-chip">Staff</span> {summary.byRole?.staff || 0}</p>
-              <p><span className="admin-chip">Patients</span> {summary.byRole?.patients || 0}</p>
+                <label className="admin-field-label">Email</label>
+                <input className="admin-input" type="email" placeholder="name@hospital.com" value={newUser.email} onChange={(e) => handleNewUserChange("email", e.target.value)} required />
+
+                <label className="admin-field-label">Password</label>
+                <input className="admin-input" type="password" placeholder="Create secure password" value={newUser.password} onChange={(e) => handleNewUserChange("password", e.target.value)} required />
+
+                <div className="admin-form-row">
+                  <div className="admin-form-field">
+                    <label className="admin-field-label">Role</label>
+                    <select className="admin-select" value={newUser.role} onChange={(e) => handleNewUserChange("role", e.target.value)}>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="DOCTOR">DOCTOR</option>
+                      <option value="NURSE">NURSE</option>
+                      <option value="STAFF">STAFF</option>
+                      <option value="PATIENT">PATIENT</option>
+                    </select>
+                  </div>
+                  <div className="admin-form-field">
+                    <label className="admin-field-label">Approval</label>
+                    <select className="admin-select" value={newUser.approvalStatus} onChange={(e) => handleNewUserChange("approvalStatus", e.target.value)}>
+                      <option value="PENDING">PENDING</option>
+                      <option value="APPROVED">APPROVED</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label className="admin-field-label">Phone</label>
+                <input className="admin-input" placeholder="Optional phone number" value={newUser.phone} onChange={(e) => handleNewUserChange("phone", e.target.value)} />
+
+                <button className="admin-btn primary admin-btn-block" type="submit">Create User</button>
+              </form>
             </div>
+
+            <div className="admin-panel admin-role-overview">
+              <h3 className="admin-section-title">Role Overview</h3>
+              <div className="admin-role-list">
+                <div className="admin-role-item"><span className="admin-chip">Admins</span><strong>{summary.byRole?.admins || 0}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip">Doctors</span><strong>{summary.byRole?.doctors || 0}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip">Nurses</span><strong>{summary.byRole?.nurses || 0}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip">Staff</span><strong>{summary.byRole?.staff || 0}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip">Patients</span><strong>{summary.byRole?.patients || 0}</strong></div>
+              </div>
+            </div>
+            </aside>
           </div>
         ) : (
           <div className="admin-panel">

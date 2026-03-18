@@ -6,7 +6,10 @@ const LabTests = () => {
 
   useEffect(() => {
     fetchReports()
-      .then((res) => setTests(Array.isArray(res?.data) ? res.data : []))
+      .then((res) => {
+        const all = Array.isArray(res?.data) ? res.data : [];
+        setTests(all.filter((report) => report.reportType !== "PRESCRIPTION"));
+      })
       .catch(() => setTests([]));
   }, []);
 
