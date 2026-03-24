@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../Doctordashboard.css";
-import { fetchDoctorProfile, updateDoctorProfile } from "../api";
+import { fetchDoctorProfile, fetchHospitalCatalog, updateDoctorProfile } from "../api";
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -11,6 +11,9 @@ const Profile = () => {
     gender: "",
     address: "",
     specialty: "",
+    hospitalId: "",
+    hospitalName: "",
+    deptId: "",
     department: "",
     qualification: "",
     experience: "",
@@ -23,23 +26,52 @@ const Profile = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [hospitalCatalog, setHospitalCatalog] = useState([]);
+
+  const departmentOptions = hospitalCatalog[0]?.departments || [];
 
   useEffect(() => {
-    fetchDoctorProfile()
-      .then((data) => {
-        if (data?.success && data?.data) {
+    Promise.all([fetchDoctorProfile(), fetchHospitalCatalog()])
+      .then(([profileResponse, catalogResponse]) => {
+        if (profileResponse?.success && profileResponse?.data) {
           setProfile((prev) => ({
             ...prev,
-            ...data.data,
-            specialty: data.data.specialty || data.data.speciality || prev.specialty,
+            ...profileResponse.data,
+            specialty: profileResponse.data.specialty || profileResponse.data.speciality || prev.specialty,
+            hospitalName: profileResponse.data.hospitalName || "MediPortal",
+            deptId: profileResponse.data.deptId || prev.deptId,
           }));
+        }
+
+        if (catalogResponse?.success) {
+          const hospitals = Array.isArray(catalogResponse?.data?.hospitals) ? catalogResponse.data.hospitals : [];
+          setHospitalCatalog(hospitals);
+          if (hospitals[0]) {
+            setProfile((prev) => ({
+              ...prev,
+              hospitalId: prev.hospitalId || hospitals[0].id,
+              hospitalName: hospitals[0].name || "MediPortal",
+            }));
+          }
         }
       })
       .catch((err) => console.log("Error fetching profile:", err));
   }, []);
 
   const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "deptId") {
+      const selectedDepartment = departmentOptions.find((item) => String(item.id) === String(value));
+      setProfile((prev) => ({
+        ...prev,
+        deptId: value,
+        department: selectedDepartment?.name || "",
+      }));
+      return;
+    }
+
+    setProfile({ ...profile, [name]: value });
   };
 
   const handlePhotoUpload = (e) => {
@@ -226,14 +258,23 @@ const Profile = () => {
             </div>
 
             <div className="form-group">
+              <label>Hospital</label>
+              <input value={profile.hospitalName || "MediPortal"} disabled />
+            </div>
+
+            <div className="form-group">
               <label>Department</label>
-              <input
-                name="department"
-                value={profile.department}
+              <select
+                name="deptId"
+                value={profile.deptId}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="Department"
-              />
+              >
+                <option value="">Select Department</option>
+                {departmentOptions.map((department) => (
+                  <option key={department.id} value={department.id}>{department.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">

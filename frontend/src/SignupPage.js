@@ -1,7 +1,7 @@
 // src/SignupPage.js
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./Auth.css";
-import { signup } from "./api.js";
+import { fetchHospitalCatalog, signup } from "./api.js";
 import { useNavigate } from "react-router-dom";
 
 const SignupPage = () => {
@@ -13,6 +13,7 @@ const SignupPage = () => {
     role: "PATIENT",
     password: "",
     confirmPassword: "",
+    hospitalId: "",
     department: "",
     timeSchedule: "",
     speciality: "",
@@ -23,9 +24,42 @@ const SignupPage = () => {
     emergencySectorId: "",
     profileUrl: "",
   });
+  const [hospitalCatalog, setHospitalCatalog] = useState([]);
+
+  const departmentOptions = useMemo(() => {
+    const selected = hospitalCatalog[0];
+    return Array.isArray(selected?.departments) ? selected.departments : [];
+  }, [hospitalCatalog]);
+
+  useEffect(() => {
+    fetchHospitalCatalog()
+      .then((response) => {
+        if (response?.success) {
+          const hospitals = Array.isArray(response?.data?.hospitals) ? response.data.hospitals : [];
+          setHospitalCatalog(hospitals);
+          if (hospitals[0]) {
+            setFormData((prev) => ({ ...prev, hospitalId: String(hospitals[0].id) }));
+          }
+        }
+      })
+      .catch((error) => {
+        console.log("Error fetching hospital catalog:", error);
+      });
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "deptId") {
+      const selectedDepartment = departmentOptions.find((department) => String(department.id) === String(value));
+      setFormData((prev) => ({
+        ...prev,
+        deptId: value,
+        department: selectedDepartment?.name || "",
+      }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -112,8 +146,8 @@ const SignupPage = () => {
     }
 
     if (isProfessional) {
-      if (!formData.department.trim() || !formData.timeSchedule.trim()) {
-        alert("Department and time schedule are required for professional signup.");
+      if (!formData.hospitalId || !formData.department.trim() || !formData.timeSchedule.trim()) {
+        alert("Hospital, department, and time schedule are required for professional signup.");
         return;
       }
 
@@ -236,15 +270,22 @@ const SignupPage = () => {
 
           {(formData.role === "DOCTOR" || formData.role === "NURSE" || formData.role === "STAFF") && (
             <>
+              <label>Hospital</label>
+              <input type="text" value={hospitalCatalog[0]?.name || "MediPortal"} disabled />
+
               <label>Department</label>
-              <input
-                type="text"
-                name="department"
-                value={formData.department}
+              <select
+                name="deptId"
+                value={formData.deptId}
                 onChange={handleChange}
-                placeholder="e.g. Cardiology, Emergency, Diagnostics"
                 required
-              />
+                disabled={!departmentOptions.length}
+              >
+                <option value="">Select Department</option>
+                {departmentOptions.map((department) => (
+                  <option key={department.id} value={department.id}>{department.name}</option>
+                ))}
+              </select>
 
               <label>Time Schedule</label>
               <input
@@ -266,15 +307,6 @@ const SignupPage = () => {
                     onChange={handleChange}
                     placeholder="e.g. Cardiology"
                     required
-                  />
-
-                  <label>Department ID (optional)</label>
-                  <input
-                    type="number"
-                    name="deptId"
-                    value={formData.deptId}
-                    onChange={handleChange}
-                    placeholder="e.g. 1"
                   />
                 </>
               )}
@@ -312,15 +344,6 @@ const SignupPage = () => {
                     onChange={handleChange}
                     placeholder="e.g. Laboratory, Admissions"
                     required
-                  />
-
-                  <label>Department ID (optional)</label>
-                  <input
-                    type="number"
-                    name="deptId"
-                    value={formData.deptId}
-                    onChange={handleChange}
-                    placeholder="e.g. 3"
                   />
 
                   <label>Emergency Sector ID (optional)</label>

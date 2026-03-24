@@ -1,6 +1,6 @@
 // src/controllers/doctorController.js
 import { Op } from 'sequelize';
-import { Appointment, Department, Doctor, Telemedicine, User } from '../models/index.js';
+import { Appointment, Department, Doctor, Hospital, Telemedicine, User } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
@@ -173,6 +173,14 @@ export const getMyDoctorProfile = async (req, res) => {
       }
     })();
 
+    let selectedDepartment = null;
+    if (doctor?.Dept_ID) {
+      selectedDepartment = await Department.findByPk(doctor.Dept_ID, {
+        attributes: ['id', 'name', 'H_ID'],
+        include: [{ model: Hospital, attributes: ['id', 'name'] }],
+      });
+    }
+
     return res.json(
       formatResponse(true, 'Doctor profile fetched', {
         id: user.id,
@@ -184,9 +192,11 @@ export const getMyDoctorProfile = async (req, res) => {
         gender: user.gender,
         speciality: doctor?.speciality || details.speciality || '',
         specialty: doctor?.speciality || details.speciality || '',
-        department: doctor?.department || details.department || '',
+        department: selectedDepartment?.name || doctor?.department || details.department || '',
         timeSchedule: doctor?.timeSchedule || details.timeSchedule || '',
         deptId: doctor?.Dept_ID || details.deptId || '',
+        hospitalId: selectedDepartment?.H_ID || '',
+        hospitalName: selectedDepartment?.Hospital?.name || '',
         dateOfBirth: details.dateOfBirth || '',
         qualification: details.qualification || '',
         experience: details.experience || '',
@@ -244,24 +254,32 @@ export const updateMyDoctorProfile = async (req, res) => {
     }
 
     const speciality = String(req.body.speciality || req.body.specialty || '').trim();
-    const department = String(req.body.department || '').trim();
+    const departmentFromInput = String(req.body.department || '').trim();
     const timeSchedule = String(req.body.timeSchedule || req.body.availableTime || '').trim();
     const deptId = req.body.deptId === '' || req.body.deptId === undefined || req.body.deptId === null
       ? null
       : Number(req.body.deptId);
     let validDeptId = doctor.Dept_ID ?? null;
+    let selectedDepartmentName = doctor.department || '';
+    let selectedHospitalName = '';
     if (deptId === null) {
       validDeptId = null;
+      selectedDepartmentName = departmentFromInput || doctor.department || '';
     } else if (Number.isInteger(deptId)) {
-      const departmentRow = await Department.findByPk(deptId);
+      const departmentRow = await Department.findByPk(deptId, {
+        attributes: ['id', 'name', 'H_ID'],
+        include: [{ model: Hospital, attributes: ['id', 'name'] }],
+      });
       validDeptId = departmentRow ? deptId : null;
+      selectedDepartmentName = departmentRow?.name || departmentFromInput || '';
+      selectedHospitalName = departmentRow?.Hospital?.name || '';
     }
 
     await Promise.all([
       Object.keys(userUpdates).length > 0 ? user.update(userUpdates) : Promise.resolve(),
       doctor.update({
         speciality: speciality || doctor.speciality,
-        department: department || doctor.department,
+        department: selectedDepartmentName || doctor.department,
         timeSchedule: timeSchedule || doctor.timeSchedule,
         Dept_ID: validDeptId,
         profileUrl: userUpdates.profileUrl !== undefined ? userUpdates.profileUrl : doctor.profileUrl,
@@ -277,7 +295,8 @@ export const updateMyDoctorProfile = async (req, res) => {
 
     const professionalDetails = {
       ...existingDetails,
-      department: department || doctor.department || existingDetails.department || '',
+      department: selectedDepartmentName || doctor.department || existingDetails.department || '',
+      hospitalName: selectedHospitalName || existingDetails.hospitalName || '',
       timeSchedule: timeSchedule || doctor.timeSchedule || existingDetails.timeSchedule || '',
       speciality: speciality || doctor.speciality || existingDetails.speciality || '',
       deptId: validDeptId,
@@ -302,6 +321,7 @@ export const updateMyDoctorProfile = async (req, res) => {
       phone: userUpdates.phone ?? user.phone,
       address: userUpdates.address ?? user.address,
       gender: userUpdates.gender ?? user.gender,
+      hospitalName: selectedHospitalName,
     }));
   } catch (err) {
     return handleError(res, err);

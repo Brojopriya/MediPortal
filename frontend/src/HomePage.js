@@ -248,9 +248,7 @@ const HomePage = () => {
             </button>
           </div>
 
-          <p className="hero-live-note">
-            {isLoadingHome ? "Syncing live hospital metrics..." : "Live metrics are synced from backend services."}
-          </p>
+          
         </div>
 
         

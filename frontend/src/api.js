@@ -7,6 +7,20 @@ const CANDIDATE_API_BASES = [
 
 const API_BASES = [...new Set(CANDIDATE_API_BASES.map((base) => String(base).replace(/\/$/, "")))];
 
+const handleUnauthorized = () => {
+  const raw = localStorage.getItem("user");
+  const user = raw ? JSON.parse(raw) : null;
+  const target = user?.role === "ADMIN" ? "/admin-login" : "/login";
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  // Redirect only in browser runtime to avoid test environment issues.
+  if (typeof window !== "undefined" && window.location.pathname !== target) {
+    window.location.assign(target);
+  }
+};
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -44,6 +58,10 @@ const request = async (endpoint, options = {}) => {
       const json = await parseResponseBody(res);
 
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          handleUnauthorized();
+        }
+
         return {
           success: false,
           message: json?.message || `Request failed with status ${res.status}`,
@@ -165,6 +183,8 @@ export const fetchAdminUsers = async () => request("/users/admin/users");
 
 export const fetchAdminSummary = async () => request("/users/admin/summary");
 
+export const fetchAdminAnalytics = async () => request("/stats/admin-analytics");
+
 export const createAdminUser = async (data) =>
   request("/users/admin/users", {
     method: "POST",
@@ -188,6 +208,45 @@ export const updateSiteContent = async (data) =>
   request("/users/site-content", {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+
+export const fetchHospitals = async () => request("/hospitals");
+
+export const fetchHospitalCatalog = async () => request("/hospitals/catalog");
+
+export const createHospital = async (data) =>
+  request("/hospitals", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const createDepartment = async (data) =>
+  request("/hospitals/departments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const createWard = async (data) =>
+  request("/hospitals/wards", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const createDiagnosticTest = async (data) =>
+  request("/hospitals/tests", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const updateHospital = async (id, data) =>
+  request(`/hospitals/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+export const deleteHospital = async (id) =>
+  request(`/hospitals/${id}`, {
+    method: "DELETE",
   });
 
 // Forgot Password

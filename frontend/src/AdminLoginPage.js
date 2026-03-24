@@ -6,6 +6,8 @@ import "./Auth.css";
 const AdminLoginPage = () => {
   const [formData, setFormData] = useState({ name: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -15,18 +17,23 @@ const AdminLoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setError("");
+
     const data = await adminLogin({
       name: formData.name.trim(),
       password: formData.password,
     });
+
+    setSubmitting(false);
+
     if (!data?.success) {
-      alert(data?.message || "Admin login failed");
+      setError(data?.message || "Admin login failed");
       return;
     }
 
     localStorage.setItem("token", data.data.token);
     localStorage.setItem("user", JSON.stringify(data.data.user));
-    alert("Admin login successful");
     navigate("/AdminDashboard");
   };
 
@@ -35,8 +42,9 @@ const AdminLoginPage = () => {
       <div className="auth-card">
         <h2>Admin Login</h2>
         <form onSubmit={handleSubmit}>
+          {error ? <p className="auth-error">{error}</p> : null}
           <label>Admin Name</label>
-          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+          <input type="text" name="name" value={formData.name} onChange={handleChange} required disabled={submitting} />
 
           <label>Password</label>
           <input
@@ -45,6 +53,7 @@ const AdminLoginPage = () => {
             value={formData.password}
             onChange={handleChange}
             required
+            disabled={submitting}
           />
 
           <div className="auth-inline-row">
@@ -54,12 +63,13 @@ const AdminLoginPage = () => {
                 checked={showPassword}
                 onChange={() => setShowPassword((s) => !s)}
                 className="auth-inline-checkbox"
+                disabled={submitting}
               />
               Show password
             </label>
           </div>
 
-          <button type="submit">Login as Admin</button>
+          <button type="submit" disabled={submitting}>{submitting ? "Signing in..." : "Login as Admin"}</button>
         </form>
         <p>
           <a href="/">← Back to Home</a>

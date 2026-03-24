@@ -91,3 +91,93 @@ export const getPatientDashboardSummary = async (req, res) => {
     return handleError(res, err);
   }
 };
+
+// Private analytics for admin dashboard reporting.
+export const getAdminAnalytics = async (req, res) => {
+  try {
+    const [
+      appointmentsTotal,
+      appointmentsScheduled,
+      appointmentsAccepted,
+      appointmentsCompleted,
+      appointmentsRejected,
+      reportsTotal,
+      telemedicineSessions,
+      hospitalsTotal,
+      departmentsTotal,
+      wardsTotal,
+      emergencyUnitsTotal,
+      usersTotal,
+      approvedProfessionals,
+      pendingProfessionals,
+    ] = await Promise.all([
+      Appointment.count(),
+      Appointment.count({ where: { status: 'SCHEDULED' } }),
+      Appointment.count({ where: { status: 'ACCEPTED' } }),
+      Appointment.count({ where: { status: 'COMPLETED' } }),
+      Appointment.count({ where: { status: 'REJECTED' } }),
+      Report.count(),
+      Telemedicine.count(),
+      Hospital.count(),
+      Department.count(),
+      Ward.count(),
+      EmergencySector.count(),
+      User.count(),
+      User.count({ where: { role: { [Op.in]: ['DOCTOR', 'NURSE', 'STAFF'] }, approvalStatus: 'APPROVED' } }),
+      User.count({ where: { role: { [Op.in]: ['DOCTOR', 'NURSE', 'STAFF'] }, approvalStatus: 'PENDING' } }),
+    ]);
+
+    const appointmentTotal =
+      appointmentsScheduled + appointmentsAccepted + appointmentsCompleted + appointmentsRejected;
+
+    const appointmentStatusPie = [
+      { label: 'Scheduled', value: appointmentsScheduled, color: '#0ea5e9' },
+      { label: 'Accepted', value: appointmentsAccepted, color: '#22c55e' },
+      { label: 'Completed', value: appointmentsCompleted, color: '#0f766e' },
+      { label: 'Rejected', value: appointmentsRejected, color: '#ef4444' },
+    ].map((item) => ({
+      ...item,
+      percentage: appointmentTotal ? Math.round((item.value / appointmentTotal) * 100) : 0,
+    }));
+
+    const facilityBar = [
+      { label: 'Hospitals', value: hospitalsTotal },
+      { label: 'Departments', value: departmentsTotal },
+      { label: 'Wards', value: wardsTotal },
+      { label: 'Emergency Units', value: emergencyUnitsTotal },
+    ];
+
+    return res.json(
+      formatResponse(true, 'Admin analytics fetched', {
+        appointments: {
+          total: appointmentsTotal,
+          scheduled: appointmentsScheduled,
+          accepted: appointmentsAccepted,
+          completed: appointmentsCompleted,
+          rejected: appointmentsRejected,
+        },
+        reporting: {
+          reportsTotal,
+          telemedicineSessions,
+        },
+        facilities: {
+          hospitalsTotal,
+          departmentsTotal,
+          wardsTotal,
+          emergencyUnitsTotal,
+        },
+        users: {
+          total: usersTotal,
+          approvedProfessionals,
+          pendingProfessionals,
+        },
+        charts: {
+          appointmentStatusPie,
+          facilityBar,
+        },
+      })
+    );
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
