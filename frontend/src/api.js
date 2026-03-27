@@ -148,6 +148,24 @@ export const startTelemedicineSession = async (data) =>
     body: JSON.stringify(data),
   });
 
+export const submitTelemedicineRequest = async (data) =>
+  request("/telemedicine/request", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const fetchTelemedicineReviewQueue = async () => request("/telemedicine/review-queue");
+
+export const reviewTelemedicineRequest = async (id, data) =>
+  request(`/telemedicine/review/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+export const fetchDoctorAssignableStaff = async () => request("/telemedicine/assignable-staff");
+
+export const fetchTelemedicineSessions = async () => request("/telemedicine/session");
+
 // Signup
 export const signup = async (data) => {
   return await request("/users/register", {

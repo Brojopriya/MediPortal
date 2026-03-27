@@ -14,6 +14,7 @@ import {
   adminDeleteUserById,
   getAdminSummary,
   adminCreateUser,
+  forgotPassword,
 } from '../controllers/userController.js';
 import { getPublicSiteContent, updateSiteContent } from '../controllers/siteContentController.js';
 import { protect, authorizeRoles } from '../../middleware/authMiddleware.js';
@@ -24,6 +25,7 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/admin-login', adminLoginUser);
+router.post('/forgot-password', forgotPassword);
 router.get('/site-content', getPublicSiteContent);
 
 // ✅ Protected routes (authentication required)

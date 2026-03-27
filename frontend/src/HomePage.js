@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 // App.js (or whichever file)
 import mediLogo from "./medi.png";
-import { fetchDoctors, fetchPublicStats, fetchSiteContent } from "./api";
+import { fetchDoctors, fetchHospitalCatalog, fetchPublicStats, fetchSiteContent } from "./api";
 
 const HomePage = () => {
   const [isLoadingHome, setIsLoadingHome] = useState(true);
@@ -17,6 +17,7 @@ const HomePage = () => {
     aboutHospital: "",
   });
   const [doctors, setDoctors] = useState([]);
+  const [diagnosticTests, setDiagnosticTests] = useState([]);
   const [siteContent, setSiteContent] = useState({
     heroTitle: "Care when you need it - from anywhere",
     heroSubtitle:
@@ -54,10 +55,11 @@ const HomePage = () => {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const [statsRes, doctorsRes, siteRes] = await Promise.allSettled([
+        const [statsRes, doctorsRes, siteRes, catalogRes] = await Promise.allSettled([
           fetchPublicStats(),
           fetchDoctors(),
           fetchSiteContent(),
+          fetchHospitalCatalog(),
         ]);
 
         if (statsRes.status === "fulfilled") {
@@ -90,6 +92,20 @@ const HomePage = () => {
           if (payload && typeof payload === "object") {
             setSiteContent((prev) => ({ ...prev, ...payload }));
           }
+        }
+
+        if (catalogRes?.status === "fulfilled") {
+          const payload = unwrapPayload(catalogRes.value) || {};
+          const tests = Array.isArray(payload.tests)
+            ? payload.tests
+                .map((test) => ({
+                  id: test.id,
+                  name: String(test.name || "").trim(),
+                  price: Number(test.price) || 0,
+                }))
+                .filter((test) => test.name)
+            : [];
+          setDiagnosticTests(tests);
         }
       } finally {
         setIsLoadingHome(false);
@@ -173,6 +189,8 @@ const HomePage = () => {
       note: "Registered in system",
     },
   ];
+
+  const formatBdt = (value) => `BDT ${Number(value || 0).toFixed(2)}`;
 
   return (
     <div className="home-container">
@@ -301,6 +319,28 @@ const HomePage = () => {
             <p>Emergency routing and telemedicine support extend care beyond physical visits.</p>
           </div>
         </div>
+      </section>
+
+      <section className="section test-catalog-section">
+        <div className="test-catalog-head">
+          <h2>Available Diagnostic Tests & Price</h2>
+          <p className="section-intro">Up-to-date test list from hospital catalog.</p>
+        </div>
+
+        {isLoadingHome ? (
+          <p className="muted">Loading test catalog...</p>
+        ) : diagnosticTests.length === 0 ? (
+          <p className="muted">No diagnostic tests are available yet.</p>
+        ) : (
+          <div className="test-catalog-grid">
+            {diagnosticTests.map((test) => (
+              <article key={test.id} className="test-catalog-card">
+                <h3>{test.name}</h3>
+                <p className="test-price">{formatBdt(test.price)}</p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section services">

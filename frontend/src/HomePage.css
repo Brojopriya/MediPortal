@@ -321,10 +321,51 @@ button.ghost:hover,
 .user-features-grid,
 .professionals-grid,
 .doctors-grid,
+.test-catalog-grid,
 .snapshot-grid,
 .footer-content {
   display: grid;
   gap: 12px;
+}
+
+.test-catalog-section {
+  background: linear-gradient(160deg, rgba(240, 248, 255, 0.88), rgba(217, 239, 255, 0.82));
+}
+
+.test-catalog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.test-catalog-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.test-catalog-card {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 35, 56, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 14px;
+}
+
+.test-catalog-card h3 {
+  margin: 0;
+  color: #123454;
+  font-size: 1rem;
+}
+
+.test-price {
+  margin: 8px 0 0;
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(18, 111, 183, 0.12);
+  color: #0a4f87;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .snapshot-grid {
@@ -460,6 +501,72 @@ button.ghost:hover,
 
 .doctor-public-card {
   margin-top: 12px;
+}
+
+.doctor-public-booking {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 35, 56, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.doctor-public-booking h3 {
+  margin: 0;
+  color: #0f2a47;
+}
+
+.doctor-public-booking p {
+  margin: 8px 0 0;
+}
+
+.doctor-public-booking-form {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.doctor-public-booking-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #1c3f61;
+  font-weight: 600;
+}
+
+.doctor-public-booking-form input,
+.doctor-public-booking-form select {
+  width: 100%;
+  border: 1px solid rgba(15, 35, 56, 0.2);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.doctor-public-booking-form button {
+  width: 100%;
+}
+
+.doctor-public-notice {
+  margin-top: 10px;
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.doctor-public-notice.success {
+  background: rgba(25, 169, 116, 0.14);
+  color: #0f6a49;
+  border: 1px solid rgba(25, 169, 116, 0.3);
+}
+
+.doctor-public-notice.error {
+  background: rgba(198, 58, 58, 0.14);
+  color: #8f2424;
+  border: 1px solid rgba(198, 58, 58, 0.32);
 }
 
 .user-section.alt {
@@ -666,6 +773,10 @@ button.ghost:hover,
   .emergency-strip {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .doctor-public-booking-form {
+    grid-template-columns: 1fr;
   }
 }
 

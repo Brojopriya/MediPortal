@@ -4,6 +4,7 @@ import Sidebar from "./staff/Sidebar";
 import Profile from "./staff/Profile";
 import Appointments from "./staff/Appointments";
 import LabTests from "./staff/LabTests";
+import Telemedicine from "./staff/Telemedicine";
 import "./MedicalStaffDashboard.css";
 import { fetchStaffStats } from "./api";
 
@@ -73,6 +74,7 @@ const MedicalStaffDashboard = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="labTests" element={<LabTests />} />
+          <Route path="telemedicine" element={<Telemedicine />} />
         </Routes>
       </div>
     </div>

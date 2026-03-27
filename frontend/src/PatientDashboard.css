@@ -305,6 +305,73 @@
   padding: 18px 22px;
 }
 
+/* Teleconsultation Request Form */
+.patient-dashboard .teleconsultation-request-card {
+  margin-bottom: 16px;
+  border: 1px solid #cfe0ff;
+}
+
+.patient-dashboard .teleconsultation-request-head {
+  margin-bottom: 16px;
+}
+
+.patient-dashboard .teleconsultation-request-head h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+}
+
+.patient-dashboard .teleconsultation-request-head p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.patient-dashboard .teleconsultation-payment-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #d9e6ff;
+  border-left: 5px solid #1d4ed8;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f7faff 0%, #edf4ff 100%);
+}
+
+.patient-dashboard .payment-label {
+  color: #23457b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.patient-dashboard .payment-number {
+  color: #0b1f44;
+  font-size: 1.2rem;
+  letter-spacing: 0.4px;
+}
+
+.patient-dashboard .payment-note {
+  color: #365680;
+  font-size: 0.88rem;
+}
+
+.patient-dashboard .teleconsultation-request-form .teleconsultation-grid {
+  gap: 16px;
+}
+
+.patient-dashboard .field-hint {
+  margin-top: 6px;
+  color: #4d6691;
+  font-size: 0.82rem;
+}
+
+.patient-dashboard .teleconsultation-actions {
+  margin-top: 4px;
+}
+
 .patient-dashboard .next-appointment-text {
   margin: 0;
   color: var(--text-primary);

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Sidebar from "./doctor/Sidebar";
 import Profile from "./doctor/Profile";
 import Appointments from "./doctor/Appointments";
+import Telemedicine from "./doctor/Telemedicine";
 import Patients from "./doctor/Patients";
 import Prescriptions from "./doctor/Prescriptions";
 import Emergency from "./doctor/Emergency";
@@ -20,6 +21,7 @@ const DoctorDashboard = () => {
           
           <Route path="profile" element={<Profile />} />
           <Route path="appointments" element={<Appointments />} />
+          <Route path="telemedicine" element={<Telemedicine />} />
           <Route path="patients" element={<Patients />} />
           <Route path="prescriptions" element={<Prescriptions />} />
           <Route path="emergency" element={<Emergency />} />

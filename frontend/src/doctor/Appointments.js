@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import {
   createReport,
   fetchDoctorAppointments,
-  startTelemedicineSession,
   updateAppointmentById,
 } from "../api";
 
@@ -19,17 +18,6 @@ const Appointments = () => {
   useEffect(() => {
     loadAppointments();
   }, []);
-
-  const handleStartTelemedicine = async (appointment) => {
-    const result = await startTelemedicineSession({
-      D_ID: appointment.D_ID,
-      P_ID: appointment.P_ID,
-      date: appointment.date,
-      media: "Video",
-      prescription: "Follow telemedicine instructions",
-    });
-    alert(result?.success ? "Telemedicine session created." : result?.message || "Failed to create session.");
-  };
 
   const handleRecommendTest = async (appointment) => {
     const result = await createReport({
@@ -71,7 +59,6 @@ const Appointments = () => {
               <td>
                 <button onClick={() => handleStatusUpdate(a, "ACCEPTED")}>Accept</button>
                 <button onClick={() => handleStatusUpdate(a, "COMPLETED")}>Complete</button>
-                <button onClick={() => handleStartTelemedicine(a)}>Telemedicine</button>
                 <button onClick={() => handleRecommendTest(a)}>Recommend Test</button>
               </td>
             </tr>

@@ -111,6 +111,10 @@ Telemedicine.belongsTo(Doctor, { foreignKey: 'D_ID' });
 
 Patient.hasMany(Telemedicine, { foreignKey: 'P_ID' });
 Telemedicine.belongsTo(Patient, { foreignKey: 'P_ID' });
+Telemedicine.belongsTo(User, { foreignKey: 'P_ID', targetKey: 'id', as: 'PatientUser' });
+
+MedicalStaff.hasMany(Telemedicine, { foreignKey: 'S_ID' });
+Telemedicine.belongsTo(MedicalStaff, { foreignKey: 'S_ID' });
 
 // Many-to-many: Nurse <-> Patient (Nurse_Patient)
 Nurse.belongsToMany(Patient, { through: NursePatient, foreignKey: 'N_ID', otherKey: 'P_ID' });

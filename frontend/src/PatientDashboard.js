@@ -9,6 +9,8 @@ import {
   fetchMyAppointments,
   fetchPatientSummary,
   fetchReports,
+  fetchTelemedicineSessions,
+  submitTelemedicineRequest,
 } from "./api";
 
 const getStatusClass = (status) => {
@@ -18,6 +20,13 @@ const getStatusClass = (status) => {
   if (normalized === "rejected") return "status-rejected";
   return "status-scheduled";
 };
+
+const extractSessionTime = (session) => {
+  const fromPrescription = String(session?.prescription || "").match(/(\d{1,2}:\d{2})/);
+  return fromPrescription ? fromPrescription[1] : "-";
+};
+
+const isPrescriptionReport = (report) => String(report?.reportType || "").toUpperCase() === "PRESCRIPTION";
 
 const DashboardHome = () => {
   const navigate = useNavigate();
@@ -260,20 +269,75 @@ const MedicalRecords = () => (
   </div>
 );
 
-const Prescriptions = () => (
-  <div className="dashboard-content">
-    <div className="page-header">
-      <h1 className="page-title">My Prescriptions</h1>
-      <p className="page-subtitle">View your current and past prescriptions</p>
-    </div>
-    <div className="content-card">
-      <div className="empty-state">
-        <p>💊 Your prescriptions will appear here</p>
-        <p className="empty-subtitle">This feature is coming soon</p>
+const Prescriptions = () => {
+  const [prescriptions, setPrescriptions] = React.useState([]);
+  const [loadingPrescriptions, setLoadingPrescriptions] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const loadPrescriptions = async () => {
+      setLoadingPrescriptions(true);
+      const res = await fetchReports();
+      if (mounted) {
+        const allReports = Array.isArray(res?.data) ? res.data : [];
+        setPrescriptions(allReports.filter(isPrescriptionReport));
+        setLoadingPrescriptions(false);
+      }
+    };
+    loadPrescriptions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <div className="dashboard-content">
+      <div className="page-header">
+        <h1 className="page-title">My Prescriptions</h1>
+        <p className="page-subtitle">View your current and past prescriptions</p>
+      </div>
+      <div className="content-card">
+        {loadingPrescriptions ? (
+          <div className="empty-state">
+            <p>Loading prescriptions...</p>
+          </div>
+        ) : prescriptions.length === 0 ? (
+          <div className="empty-state">
+            <p>💊 No prescriptions available</p>
+            <p className="empty-subtitle">Doctor prescriptions will appear here once published.</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Prescription ID</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prescriptions.map((report) => (
+                  <tr key={report.id}>
+                    <td>PRX-{report.id}</td>
+                    <td>{report.date ? new Date(report.date).toLocaleDateString() : "-"}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(report.status)}`}>
+                        {report.status || "PENDING"}
+                      </span>
+                    </td>
+                    <td>{report.notes || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Reports = () => {
   const [reports, setReports] = React.useState([]);
@@ -285,7 +349,8 @@ const Reports = () => {
       setLoadingReports(true);
       const res = await fetchReports();
       if (mounted) {
-        setReports(Array.isArray(res?.data) ? res.data : []);
+        const allReports = Array.isArray(res?.data) ? res.data : [];
+        setReports(allReports.filter((report) => !isPrescriptionReport(report)));
         setLoadingReports(false);
       }
     };
@@ -342,20 +407,207 @@ const Reports = () => {
   );
 };
 
-const Teleconsultation = () => (
-  <div className="dashboard-content">
-    <div className="page-header">
-      <h1 className="page-title">Teleconsultation</h1>
-      <p className="page-subtitle">Connect with doctors through video consultation</p>
-    </div>
-    <div className="content-card">
-      <div className="empty-state">
-        <p>💻 Online consultation feature</p>
-        <p className="empty-subtitle">This feature is coming soon</p>
+const Teleconsultation = () => {
+  const [sessions, setSessions] = React.useState([]);
+  const [doctors, setDoctors] = React.useState([]);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [form, setForm] = React.useState({
+    D_ID: "",
+    date: "",
+    requestedTime: "",
+    transactionId: "",
+  });
+  const [loading, setLoading] = React.useState(true);
+  const selectedDoctor = doctors.find((doctor) => String(doctor.id) === String(form.D_ID));
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadSessions = async () => {
+      setLoading(true);
+      const [sessionsRes, doctorsRes] = await Promise.all([
+        fetchTelemedicineSessions(),
+        fetchDoctors(),
+      ]);
+      if (mounted) {
+        setSessions(Array.isArray(sessionsRes?.data) ? sessionsRes.data : []);
+        setDoctors(Array.isArray(doctorsRes?.data) ? doctorsRes.data : []);
+        setLoading(false);
+      }
+    };
+
+    loadSessions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+
+    if (!form.D_ID || !form.date || !form.transactionId.trim()) {
+      alert("Please select doctor, preferred date, and transaction ID.");
+      return;
+    }
+
+    setSubmitting(true);
+    const result = await submitTelemedicineRequest({
+      D_ID: Number(form.D_ID),
+      date: form.date,
+      requestedTime: form.requestedTime || null,
+      transactionId: form.transactionId.trim(),
+    });
+    setSubmitting(false);
+
+    if (!result?.success) {
+      alert(result?.message || "Failed to submit payment request.");
+      return;
+    }
+
+    alert("Payment request submitted. Staff will verify and then forward to doctor.");
+    setForm({ D_ID: "", date: "", requestedTime: "", transactionId: "" });
+
+    const sessionsRes = await fetchTelemedicineSessions();
+    setSessions(Array.isArray(sessionsRes?.data) ? sessionsRes.data : []);
+  };
+
+  return (
+    <div className="dashboard-content">
+      <div className="page-header">
+        <h1 className="page-title">Teleconsultation</h1>
+        <p className="page-subtitle">Pay by bKash, submit transaction ID, then staff verification and doctor scheduling</p>
+      </div>
+
+      <div className="content-card teleconsultation-request-card">
+        <div className="teleconsultation-request-head">
+          <h3>Request Online Session</h3>
+          <p>Complete payment first, then submit your request for staff verification.</p>
+        </div>
+
+        <div className="teleconsultation-payment-box">
+          <span className="payment-label">bKash Payment Number</span>
+          <strong className="payment-number">01978896352</strong>
+          <span className="payment-note">Use this number to pay and keep your transaction ID.</span>
+        </div>
+
+        <form className="teleconsultation-request-form" onSubmit={handleSubmitRequest}>
+          <div className="form-grid teleconsultation-grid">
+            <div className="form-group full-width">
+              <label>Doctor</label>
+              <select
+                value={form.D_ID}
+                onChange={(e) => setForm((prev) => ({ ...prev, D_ID: e.target.value }))}
+                required
+              >
+                <option value="">Select Doctor</option>
+                {doctors.map((doctor) => (
+                  <option key={doctor.id} value={doctor.id}>
+                    {doctor.name || `Dr. #${doctor.id}`}
+                    {doctor.department ? ` - ${doctor.department}` : ""}
+                  </option>
+                ))}
+              </select>
+              {selectedDoctor ? (
+                <span className="field-hint">
+                  Department: {selectedDoctor.department || "Not specified"}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="form-group">
+              <label>Preferred Date</label>
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Preferred Time (Optional)</label>
+              <input
+                type="time"
+                value={form.requestedTime}
+                onChange={(e) => setForm((prev) => ({ ...prev, requestedTime: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label>bKash Transaction ID</label>
+              <input
+                type="text"
+                placeholder="Example: 9H6K8J2P"
+                value={form.transactionId}
+                onChange={(e) => setForm((prev) => ({ ...prev, transactionId: e.target.value.toUpperCase() }))}
+                required
+              />
+              <span className="field-hint">Staff will verify this transaction before sending your request to doctor.</span>
+            </div>
+          </div>
+
+          <div className="teleconsultation-actions">
+            <button className="btn-primary" type="submit" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit Payment Request"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="content-card">
+        {loading ? (
+          <div className="empty-state">
+            <p>Loading teleconsultation sessions...</p>
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="empty-state">
+            <p>No online sessions scheduled yet.</p>
+            <p className="empty-subtitle">Once doctor schedules a session, date/time/link will appear here.</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Session ID</th>
+                  <th>Doctor</th>
+                  <th>Department</th>
+                  <th>Transaction ID</th>
+                  <th>Payment Status</th>
+                  <th>Request Status</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Video Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((session) => (
+                  <tr key={session.id}>
+                    <td>TEL-{session.id}</td>
+                    <td>{session?.Doctor?.User?.name || `Dr. #${session.D_ID || "-"}`}</td>
+                    <td>{session?.Doctor?.Department?.name || session?.Doctor?.department || "-"}</td>
+                    <td>{session.transactionId || "-"}</td>
+                    <td>{session.paymentStatus || "PENDING"}</td>
+                    <td>{session.requestStatus || "PAYMENT_SUBMITTED"}</td>
+                    <td>{session.date ? new Date(session.date).toLocaleDateString() : "-"}</td>
+                    <td>{extractSessionTime(session)}</td>
+                    <td>
+                      {session.media ? (
+                        <a href={session.media} target="_blank" rel="noreferrer">Open Session Link</a>
+                      ) : (
+                        "Not available"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Billing = () => (
   <div className="dashboard-content">

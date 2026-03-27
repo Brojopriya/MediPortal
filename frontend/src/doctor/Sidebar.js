@@ -33,6 +33,13 @@ const Sidebar = () => {
           <span>Appointments</span>
         </Link>
         <Link
+          to="/DoctorDashboard/telemedicine"
+          className={isActive("/telemedicine") ? "nav-item active" : "nav-item"}
+        >
+          <i className="icon">💻</i>
+          <span>Telemedicine</span>
+        </Link>
+        <Link
           to="/DoctorDashboard/patients"
           className={isActive("/patients") ? "nav-item active" : "nav-item"}
         >

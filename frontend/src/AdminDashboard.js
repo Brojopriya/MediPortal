@@ -172,46 +172,52 @@ const AdminDashboard = () => {
     });
   }, [users, query, roleFilter, statusFilter]);
 
-  const appointmentStatusData = useMemo(() => {
-    const backendChart = analytics.charts?.appointmentStatusPie;
-    if (Array.isArray(backendChart) && backendChart.length > 0) {
-      return backendChart;
-    }
+  const userRoleData = useMemo(() => {
+    const roleCounts = users.reduce(
+      (acc, user) => {
+        const status = String(user?.approvalStatus || "").toUpperCase();
+        if (status !== "APPROVED") {
+          return acc;
+        }
+
+        const role = String(user?.role || "").toUpperCase();
+        if (role === "DOCTOR") acc.doctors += 1;
+        if (role === "PATIENT") acc.patients += 1;
+        if (role === "NURSE") acc.nurses += 1;
+        if (role === "STAFF") acc.staff += 1;
+        return acc;
+      },
+      { doctors: 0, patients: 0, nurses: 0, staff: 0 }
+    );
 
     return [
-      { label: "Scheduled", value: analytics.appointments?.scheduled || 0, color: "#0ea5e9" },
-      { label: "Accepted", value: analytics.appointments?.accepted || 0, color: "#22c55e" },
-      { label: "Completed", value: analytics.appointments?.completed || 0, color: "#0f766e" },
-      { label: "Rejected", value: analytics.appointments?.rejected || 0, color: "#ef4444" },
+      { label: "Doctors", value: roleCounts.doctors, color: "#0ea5e9" },
+      { label: "Patients", value: roleCounts.patients, color: "#22c55e" },
+      { label: "Nurses", value: roleCounts.nurses, color: "#f59e0b" },
+      { label: "Staff", value: roleCounts.staff, color: "#ef4444" },
     ];
-  }, [
-    analytics.charts?.appointmentStatusPie,
-    analytics.appointments?.scheduled,
-    analytics.appointments?.accepted,
-    analytics.appointments?.completed,
-    analytics.appointments?.rejected,
-  ]);
+  }, [users]);
 
-  const appointmentTotal = useMemo(
-    () => appointmentStatusData.reduce((sum, item) => sum + item.value, 0),
-    [appointmentStatusData]
+  const userRoleTotal = useMemo(
+    () => userRoleData.reduce((sum, item) => sum + item.value, 0),
+    [userRoleData]
   );
 
-  const appointmentPieBackground = useMemo(() => {
-    if (!appointmentTotal) {
+  const userRolePieBackground = useMemo(() => {
+    if (!userRoleTotal) {
       return "#e2e8f0";
     }
 
     let cursor = 0;
-    const segments = appointmentStatusData.map((item) => {
-      const next = cursor + (item.value / appointmentTotal) * 100;
+    const segments = userRoleData.map((item) => {
+      const next = cursor + (item.value / userRoleTotal) * 100;
       const segment = `${item.color} ${cursor}% ${next}%`;
       cursor = next;
       return segment;
     });
 
     return `conic-gradient(${segments.join(", ")})`;
-  }, [appointmentStatusData, appointmentTotal]);
+  }, [userRoleData, userRoleTotal]);
 
   const facilityBarData = useMemo(() => {
     const backendBars = analytics.charts?.facilityBar;
@@ -420,13 +426,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     clearNotice();
 
-    if (!primaryHospital?.id) {
-      setErrorNotice("MediPortal hospital is not configured yet.");
-      return;
-    }
-
     const result = await createDepartment({
-      hospitalId: primaryHospital.id,
       name: departmentDraft.name,
     });
     if (!result?.success) {
@@ -694,21 +694,21 @@ const AdminDashboard = () => {
 
             <div className="admin-analytics-chart-grid">
               <div className="admin-panel">
-                <h3 className="admin-section-title">Appointments Distribution</h3>
+                <h3 className="admin-section-title">Approved Users By Role</h3>
                 <div className="admin-pie-layout">
-                  <div className="admin-pie-chart" style={{ background: appointmentPieBackground }}>
+                  <div className="admin-pie-chart" style={{ background: userRolePieBackground }}>
                     <div className="admin-pie-center">
                       <span>Total</span>
-                      <strong>{appointmentTotal}</strong>
+                      <strong>{userRoleTotal}</strong>
                     </div>
                   </div>
                   <div className="admin-pie-legend">
-                    {appointmentStatusData.map((item) => (
+                    {userRoleData.map((item) => (
                       <div key={item.label} className="admin-pie-legend-item">
                         <span className="admin-dot" style={{ backgroundColor: item.color }} />
                         <span>{item.label}</span>
                         <strong>
-                          {item.value} ({item.percentage ?? (appointmentTotal ? Math.round((item.value / appointmentTotal) * 100) : 0)}%)
+                          {item.value} ({item.percentage ?? (userRoleTotal ? Math.round((item.value / userRoleTotal) * 100) : 0)}%)
                         </strong>
                       </div>
                     ))}
@@ -745,16 +745,6 @@ const AdminDashboard = () => {
                   <div className="admin-role-item"><span className="admin-chip">Accepted</span><strong>{analytics.appointments?.accepted || 0}</strong></div>
                   <div className="admin-role-item"><span className="admin-chip approved">Completed</span><strong>{analytics.appointments?.completed || 0}</strong></div>
                   <div className="admin-role-item"><span className="admin-chip rejected">Rejected</span><strong>{analytics.appointments?.rejected || 0}</strong></div>
-                </div>
-              </div>
-
-              <div className="admin-panel">
-                <h3 className="admin-section-title">Facility Footprint</h3>
-                <div className="admin-role-list">
-                  <div className="admin-role-item"><span className="admin-chip">Hospitals</span><strong>{analytics.facilities?.hospitalsTotal || 0}</strong></div>
-                  <div className="admin-role-item"><span className="admin-chip">Departments</span><strong>{analytics.facilities?.departmentsTotal || 0}</strong></div>
-                  <div className="admin-role-item"><span className="admin-chip">Wards</span><strong>{analytics.facilities?.wardsTotal || 0}</strong></div>
-                  <div className="admin-role-item"><span className="admin-chip">Emergency Units</span><strong>{analytics.facilities?.emergencyUnitsTotal || 0}</strong></div>
                 </div>
               </div>
             </div>
@@ -919,7 +909,7 @@ const AdminDashboard = () => {
                     required
                   />
 
-                  <label className="admin-field-label">Price</label>
+                  <label className="admin-field-label">Price (BDT)</label>
                   <input
                     className="admin-input"
                     type="number"
@@ -940,7 +930,7 @@ const AdminDashboard = () => {
                 ) : (
                   <ul className="admin-inline-list">
                     {hospitalTests.map((test) => (
-                      <li key={test.id}>{test.name} - ${Number(test.price || 0).toFixed(2)}</li>
+                      <li key={test.id}>{test.name} - BDT {Number(test.price || 0).toFixed(2)}</li>
                     ))}
                   </ul>
                 )}

@@ -301,7 +301,7 @@ const Profile = () => {
             </div>
 
             <div className="form-group">
-              <label>Consultation Fee (₹)</label>
+              <label>Consultation Fee (৳)</label>
               <input
                 name="consultationFee"
                 type="number"

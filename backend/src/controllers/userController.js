@@ -680,3 +680,40 @@ export const adminCreateUser = async (req, res) => {
     return handleError(res, err);
   }
 };
+
+// Forgot password endpoint.
+// Current behavior supports two flows:
+// 1) email only -> acknowledge reset request (placeholder for email-link integration)
+// 2) email + newPassword -> directly update password
+export const forgotPassword = async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const newPassword = String(req.body?.newPassword || '').trim();
+
+    if (!email) {
+      return res.status(400).json(formatResponse(false, 'Email is required'));
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    // Avoid user-enumeration by returning same success response when account is missing.
+    if (!user) {
+      return res.json(formatResponse(true, 'If the account exists, password reset instructions have been sent'));
+    }
+
+    if (!newPassword) {
+      return res.json(formatResponse(true, 'Password reset link sent (check your email).'));
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json(formatResponse(false, 'New password must be at least 6 characters long'));
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await user.update({ password: hashed });
+
+    return res.json(formatResponse(true, 'Password reset successful'));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
