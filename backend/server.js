@@ -6,7 +6,7 @@ import bodyParser from 'body-parser';
 import bcrypt from 'bcryptjs';
 
 // Sequelize
-import { sequelize, User } from './src/models/index.js';
+import { sequelize, User, Hospital } from './src/models/index.js';
 
 // Routes
 import userRoutes from './src/routes/userRoutes.js';
@@ -88,6 +88,22 @@ const PORT = process.env.PORT || 5000;
 const DEFAULT_ADMIN_NAME = 'Brojopriya';
 const DEFAULT_ADMIN_PASSWORD = 'AB12cd34@';
 const DEFAULT_ADMIN_EMAIL = 'brojopriya.admin@mediportal.local';
+const DEFAULT_HOSPITAL_NAME = 'MediPortal';
+const DEFAULT_HOSPITAL_LOCATION = 'Main Hospital Campus';
+
+const ensureDefaultHospital = async () => {
+  const existingHospital = await Hospital.findOne({ where: { name: DEFAULT_HOSPITAL_NAME } });
+  if (existingHospital) {
+    console.log('✅ Default MediPortal hospital ensured');
+    return;
+  }
+
+  await Hospital.create({
+    name: DEFAULT_HOSPITAL_NAME,
+    location: DEFAULT_HOSPITAL_LOCATION,
+  });
+  console.log('✅ Default MediPortal hospital created');
+};
 
 const ensureDefaultAdmin = async () => {
   const existingAdmin = await User.findOne({ where: { name: DEFAULT_ADMIN_NAME, role: 'ADMIN' } });
@@ -122,6 +138,7 @@ const startServer = async () => {
     await sequelize.sync({ alter: true }); // Safe mode: update schema without dropping data
     console.log('✅ All tables synced successfully!');
 
+    await ensureDefaultHospital();
     await ensureDefaultAdmin();
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
