@@ -3,9 +3,10 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import bcrypt from 'bcryptjs';
 
 // Sequelize
-import { sequelize } from './src/models/index.js';
+import { sequelize, User } from './src/models/index.js';
 
 // Routes
 import userRoutes from './src/routes/userRoutes.js';
@@ -84,6 +85,34 @@ app.use(errorHandler);
 // Start server and sync database
 const PORT = process.env.PORT || 5000;
 
+const DEFAULT_ADMIN_NAME = 'Brojopriya';
+const DEFAULT_ADMIN_PASSWORD = 'AB12cd34@';
+const DEFAULT_ADMIN_EMAIL = 'brojopriya.admin@mediportal.local';
+
+const ensureDefaultAdmin = async () => {
+  const existingAdmin = await User.findOne({ where: { name: DEFAULT_ADMIN_NAME, role: 'ADMIN' } });
+  const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
+
+  if (!existingAdmin) {
+    await User.create({
+      name: DEFAULT_ADMIN_NAME,
+      email: DEFAULT_ADMIN_EMAIL,
+      password: hashedPassword,
+      role: 'ADMIN',
+      approvalStatus: 'APPROVED',
+    });
+    console.log('✅ Default admin account created');
+    return;
+  }
+
+  await existingAdmin.update({
+    password: hashedPassword,
+    role: 'ADMIN',
+    approvalStatus: 'APPROVED',
+  });
+  console.log('✅ Default admin account ensured');
+};
+
 const startServer = async () => {
   try {
     await sequelize.authenticate();
@@ -92,6 +121,8 @@ const startServer = async () => {
     // Sync all models (create tables if they don’t exist)
     await sequelize.sync({ alter: true }); // Safe mode: update schema without dropping data
     console.log('✅ All tables synced successfully!');
+
+    await ensureDefaultAdmin();
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (error) {

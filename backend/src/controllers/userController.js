@@ -4,6 +4,7 @@ import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Op, fn, col, where as sequelizeWhere } from 'sequelize';
 
 const NEEDS_ADMIN_APPROVAL = new Set(['DOCTOR', 'NURSE', 'STAFF']);
 const ALLOWED_ROLES = new Set(['ADMIN', 'DOCTOR', 'NURSE', 'STAFF', 'PATIENT']);
@@ -330,12 +331,24 @@ export const deleteUser = async (req, res) => {
 // Admin login by admin name + password (no email required)
 export const adminLoginUser = async (req, res) => {
   try {
-    const { name, password } = req.body;
-    if (!name || !password) {
-      return res.status(400).json(formatResponse(false, 'Name and password are required'));
+    const rawName = String(req.body?.name || '').trim();
+    const normalizedEmail = rawName.includes('@') ? rawName.toLowerCase() : '';
+    const normalizedName = rawName;
+    const { password } = req.body;
+
+    if (!rawName || !password) {
+      return res.status(400).json(formatResponse(false, 'Admin name/email and password are required'));
     }
 
-    const admin = await User.findOne({ where: { name, role: 'ADMIN' } });
+    const admin = await User.findOne({
+      where: {
+        role: 'ADMIN',
+        [Op.or]: normalizedEmail
+          ? [{ email: normalizedEmail }]
+          : [sequelizeWhere(fn('LOWER', col('U_Name')), normalizedName.toLowerCase())],
+      },
+    });
+
     if (!admin) {
       return res.status(404).json(formatResponse(false, 'Admin user not found'));
     }
