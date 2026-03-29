@@ -4,6 +4,21 @@ import dotenv from 'dotenv';
 import { User } from '../src/models/index.js';
 dotenv.config();
 
+const FALLBACK_JWT_SECRET = 'mediportal-temporary-jwt-secret-change-me';
+let didWarnMissingJwtSecret = false;
+
+const getJwtSecret = () => {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    if (!didWarnMissingJwtSecret) {
+      console.warn('⚠️ JWT_SECRET is missing. Using temporary fallback secret for token verification.');
+      didWarnMissingJwtSecret = true;
+    }
+    return FALLBACK_JWT_SECRET;
+  }
+  return secret;
+};
+
 // ✅ Middleware to verify token
 export const protect = async (req, res, next) => {
   let token = req.headers.authorization;
@@ -18,7 +33,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({ message: 'User not found.' });
