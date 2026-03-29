@@ -111,6 +111,7 @@ export const updateNurseProfile = async (data) =>
 export const fetchNurseDashboardSummary = async () => request("/nurses/dashboard-summary");
 export const fetchNursePatients = async () => request("/nurses/my-patients");
 export const fetchNurseSchedule = async () => request("/nurses/schedule");
+export const fetchNurseOperationsContext = async () => request("/nurses/operations-context");
 export const fetchStaffProfile = async () => request("/medicalstaff/me");
 export const updateStaffProfile = async (data) =>
   request("/medicalstaff/update", {

@@ -1,6 +1,6 @@
 // src/controllers/nurseController.js
 import { Op } from 'sequelize';
-import { Appointment, Nurse, NursePatient, Report, User } from '../models/index.js';
+import { Appointment, Department, Doctor, EmergencySector, Nurse, NursePatient, Report, SiteSetting, User, Ward } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
@@ -45,7 +45,55 @@ export const getNurseDashboardSummary = async (req, res) => {
 
 export const getMyNursePatients = async (req, res) => {
   try {
-    const patientIds = await getAssignedPatientIds(req.user.id);
+    const nurse = await Nurse.findByPk(req.user.id, { attributes: ['id', 'department', 'W_ID'] });
+    if (!nurse) {
+      return res.status(404).json(formatResponse(false, 'Nurse profile not found'));
+    }
+
+    const assignedPatientIds = await getAssignedPatientIds(req.user.id);
+
+    let department = null;
+    if (nurse.department) {
+      department = await Department.findOne({ where: { name: nurse.department }, attributes: ['id', 'name'] });
+    }
+    if (!department && nurse.W_ID) {
+      const ward = await Ward.findByPk(nurse.W_ID, { attributes: ['Dept_ID'] });
+      if (ward?.Dept_ID) {
+        department = await Department.findByPk(ward.Dept_ID, { attributes: ['id', 'name'] });
+      }
+    }
+
+    const doctorFilters = [];
+    if (department?.id) {
+      doctorFilters.push({ Dept_ID: department.id });
+    }
+    if (nurse.department) {
+      doctorFilters.push({ department: nurse.department });
+      doctorFilters.push({ department: { [Op.like]: `%${nurse.department}%` } });
+    }
+
+    const departmentDoctors = doctorFilters.length
+      ? await Doctor.findAll({
+          where: { [Op.or]: doctorFilters },
+          attributes: ['id'],
+        })
+      : [];
+
+    const departmentDoctorIds = departmentDoctors.map((doctor) => doctor.id).filter((id) => Number.isInteger(id));
+
+    const departmentAppointments = departmentDoctorIds.length
+      ? await Appointment.findAll({
+          where: { D_ID: { [Op.in]: departmentDoctorIds } },
+          attributes: ['P_ID'],
+        })
+      : [];
+
+    const departmentPatientIds = departmentAppointments
+      .map((row) => row.P_ID)
+      .filter((id) => Number.isInteger(id));
+
+    const patientIds = [...new Set([...assignedPatientIds, ...departmentPatientIds])];
+
     if (!patientIds.length) {
       return res.json(formatResponse(true, 'Assigned nurse patients fetched', []));
     }
@@ -107,11 +155,16 @@ export const getNurseSchedule = async (req, res) => {
     });
 
     const uniquePatientIds = [...new Set(appointments.map((a) => a.P_ID))];
+    const uniqueDoctorIds = [...new Set(appointments.map((a) => a.D_ID).filter((id) => Number.isInteger(id)))];
     const patients = await User.findAll({
       where: { id: uniquePatientIds },
       attributes: ['id', 'name'],
     });
+    const doctors = uniqueDoctorIds.length
+      ? await User.findAll({ where: { id: uniqueDoctorIds }, attributes: ['id', 'name', 'phone'] })
+      : [];
     const patientMap = new Map(patients.map((p) => [p.id, p.name]));
+    const doctorMap = new Map(doctors.map((d) => [d.id, { name: d.name, phone: d.phone }]));
 
     const payload = appointments.map((a) => ({
       id: a.id,
@@ -121,9 +174,121 @@ export const getNurseSchedule = async (req, res) => {
       patientId: a.P_ID,
       patientName: patientMap.get(a.P_ID) || `Patient #${a.P_ID}`,
       doctorId: a.D_ID,
+      doctorName: doctorMap.get(a.D_ID)?.name || (a.D_ID ? `Dr. #${a.D_ID}` : null),
+      doctorPhone: doctorMap.get(a.D_ID)?.phone || null,
     }));
 
     return res.json(formatResponse(true, 'Nurse schedule fetched', payload));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+export const getNurseOperationsContext = async (req, res) => {
+  try {
+    const defaultEmergencyCall = '+1 234 567 890';
+    const nurse = await Nurse.findByPk(req.user.id);
+    if (!nurse) {
+      return res.status(404).json(formatResponse(false, 'Nurse profile not found'));
+    }
+
+    let ward = null;
+    let department = null;
+
+    // Prefer nurse profile department (signup/profile) as the primary department context.
+    if (nurse.department) {
+      department = await Department.findOne({
+        where: { name: nurse.department },
+        attributes: ['id', 'name', 'H_ID'],
+      });
+    }
+
+    if (nurse.W_ID) {
+      ward = await Ward.findByPk(nurse.W_ID, { attributes: ['id', 'capacity', 'Dept_ID'] });
+      if (!department && ward?.Dept_ID) {
+        department = await Department.findByPk(ward.Dept_ID, { attributes: ['id', 'name', 'H_ID'] });
+      }
+    }
+
+    const displayDepartmentName = nurse.department || department?.name || null;
+
+    const doctorFilters = [];
+    if (department?.id) {
+      doctorFilters.push({ Dept_ID: department.id });
+    }
+    if (displayDepartmentName) {
+      doctorFilters.push({ department: displayDepartmentName });
+      doctorFilters.push({ department: { [Op.like]: `%${displayDepartmentName}%` } });
+    }
+
+    const doctors = doctorFilters.length
+      ? await Doctor.findAll({
+          where: {
+            [Op.or]: doctorFilters,
+          },
+          attributes: ['id', 'speciality', 'department', 'timeSchedule'],
+        })
+      : [];
+
+    const doctorIds = doctors.map((doctor) => doctor.id).filter((id) => Number.isInteger(id));
+    const doctorUsers = doctorIds.length
+      ? await User.findAll({ where: { id: doctorIds }, attributes: ['id', 'name', 'phone', 'email'] })
+      : [];
+    const doctorUserMap = new Map(doctorUsers.map((user) => [user.id, user]));
+
+    const emergencySectors = department?.H_ID
+      ? await EmergencySector.findAll({ where: { H_ID: department.H_ID }, attributes: ['id', 'name'] })
+      : [];
+
+    const emergencySetting = await SiteSetting.findOne({ where: { key: 'emergencyContact' } });
+    const configuredEmergencyCall = emergencySetting?.value
+      ? String(emergencySetting.value).replace(/^"|"$/g, '').trim()
+      : '';
+    const emergencyCallNumber = configuredEmergencyCall || defaultEmergencyCall;
+
+    const emergencySectorPayload = emergencySectors.length
+      ? emergencySectors.map((sector) => ({
+          id: sector.id,
+          name: sector.name,
+          callNumber: emergencyCallNumber,
+        }))
+      : [
+          {
+            id: 0,
+            name: 'General Emergency Desk',
+            callNumber: emergencyCallNumber,
+          },
+        ];
+
+    const assignmentComplete = Boolean(department?.id && ward?.id);
+
+    return res.json(
+      formatResponse(true, 'Nurse operations context fetched', {
+        assignment: {
+          assignmentComplete,
+          departmentId: department?.id || null,
+          departmentName: displayDepartmentName,
+          wardId: ward?.id || nurse.W_ID || null,
+          wardLabel: ward?.id ? `Ward #${ward.id}` : null,
+          wardCapacity: ward?.capacity || null,
+          shift: nurse.shift || nurse.timeSchedule || null,
+        },
+        emergencyContact: emergencyCallNumber,
+        emergencySectors: emergencySectorPayload,
+        departmentDoctors: doctors.map((doctor) => {
+          const user = doctorUserMap.get(doctor.id);
+          return {
+            id: doctor.id,
+            name: user?.name || `Dr. #${doctor.id}`,
+            phone: user?.phone || null,
+            email: user?.email || null,
+            specialty: doctor.speciality || null,
+            department: doctor.department || department?.name || null,
+            schedule: doctor.timeSchedule || null,
+          };
+        }),
+      })
+    );
   } catch (err) {
     return handleError(res, err);
   }
