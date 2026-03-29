@@ -26,6 +26,8 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();
 const app = express();
+const isRender = String(process.env.RENDER || '').toLowerCase() === 'true';
+const isProduction = process.env.NODE_ENV === 'production' || isRender;
 
 // ✅ CORS setup
 const configuredOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:3001")
@@ -91,6 +93,30 @@ const DEFAULT_ADMIN_EMAIL = 'brojopriya.admin@mediportal.local';
 const DEFAULT_HOSPITAL_NAME = 'MediPortal';
 const DEFAULT_HOSPITAL_LOCATION = 'Main Hospital Campus';
 
+const validateDatabaseEnv = () => {
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+
+  if (!hasDatabaseUrl) {
+    const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
+    const missing = required.filter((key) => !String(process.env[key] || '').trim());
+
+    if (missing.length) {
+      throw new Error(
+        `Missing database environment variables: ${missing.join(', ')}. ` +
+          'Set DATABASE_URL or all DB_HOST, DB_NAME, DB_USER, DB_PASS values.'
+      );
+    }
+
+    const host = String(process.env.DB_HOST || '').trim().toLowerCase();
+    if (isProduction && (host === '127.0.0.1' || host === 'localhost')) {
+      throw new Error(
+        'Invalid DB_HOST for production: localhost/127.0.0.1. ' +
+          'Use your hosted MySQL host from provider/Render environment.'
+      );
+    }
+  }
+};
+
 const ensureDefaultHospital = async () => {
   const existingHospital = await Hospital.findOne({ where: { name: DEFAULT_HOSPITAL_NAME } });
   if (existingHospital) {
@@ -131,6 +157,8 @@ const ensureDefaultAdmin = async () => {
 
 const startServer = async () => {
   try {
+    validateDatabaseEnv();
+
     await sequelize.authenticate();
     console.log('✅ Database connected successfully!');
 
@@ -143,7 +171,19 @@ const startServer = async () => {
 
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    const root = error?.original || error?.parent || error;
+    console.error('❌ Database connection failed:', root?.message || error?.message || error);
+
+    if (root?.code === 'ECONNREFUSED') {
+      console.error('⚠️ Connection was refused by database host.');
+      console.error('   - Do not use localhost/127.0.0.1 on Render');
+      console.error('   - Set DATABASE_URL or DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS correctly');
+      console.error('   - Ensure database provider allows external connections');
+    }
+
+    if (isRender) {
+      process.exit(1);
+    }
   }
 };
 
