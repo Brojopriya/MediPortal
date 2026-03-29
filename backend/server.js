@@ -99,6 +99,11 @@ const shouldAlterSchema =
   String(process.env.DB_SYNC_ALTER || '').toLowerCase() === 'true' && !isProduction;
 
 const validateDatabaseEnv = () => {
+  const jwtSecret = String(process.env.JWT_SECRET || '').trim();
+  if (!jwtSecret) {
+    throw new Error('Missing required environment variable: JWT_SECRET');
+  }
+
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 
   if (!hasDatabaseUrl) {

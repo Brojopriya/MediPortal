@@ -6,6 +6,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op, fn, col, where as sequelizeWhere } from 'sequelize';
 
+const getJwtSecretOrThrow = () => {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET is missing in environment variables');
+  }
+  return secret;
+};
+
 const NEEDS_ADMIN_APPROVAL = new Set(['DOCTOR', 'NURSE', 'STAFF']);
 const ALLOWED_ROLES = new Set(['ADMIN', 'DOCTOR', 'NURSE', 'STAFF', 'PATIENT']);
 const ALLOWED_APPROVALS = new Set(['PENDING', 'APPROVED', 'REJECTED']);
@@ -266,7 +274,8 @@ export const loginUser = async (req, res) => {
       );
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const jwtSecret = getJwtSecretOrThrow();
+    const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '7d' });
     const parsedProfessionalDetails = parseProfessionalDetails(user.professionalDetails);
 
     const safeUser = {
@@ -358,7 +367,8 @@ export const adminLoginUser = async (req, res) => {
       return res.status(401).json(formatResponse(false, 'Invalid credentials'));
     }
 
-    const token = jwt.sign({ id: admin.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const jwtSecret = getJwtSecretOrThrow();
+    const token = jwt.sign({ id: admin.id }, jwtSecret, { expiresIn: '7d' });
     const safeUser = {
       id: admin.id,
       name: admin.name,
