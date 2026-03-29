@@ -101,10 +101,10 @@ const shouldAlterSchema =
 const validateDatabaseEnv = () => {
   const jwtSecret = String(process.env.JWT_SECRET || '').trim();
   if (!jwtSecret) {
-    throw new Error('Missing required environment variable: JWT_SECRET');
+    console.warn('⚠️ JWT_SECRET is not set. Using temporary fallback secret for token signing. Set JWT_SECRET on Render.');
   }
 
-  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL || process.env.MYSQL_URL);
 
   if (!hasDatabaseUrl) {
     const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
