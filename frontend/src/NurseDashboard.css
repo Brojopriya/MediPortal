@@ -244,6 +244,129 @@
   background-color: #cbd5e0;
 }
 
+/* Shared nurse content pages */
+.dashboard-main {
+  flex: 1;
+  padding: 28px;
+}
+
+.nurse-page {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(19, 49, 95, 0.08);
+}
+
+.nurse-page-header h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #1d2b4f;
+}
+
+.nurse-page-header p {
+  margin: 8px 0 0;
+  color: #546387;
+}
+
+.nurse-error-text {
+  margin-top: 16px;
+  color: #b42318;
+  background: #fee4e2;
+  border: 1px solid #fecdca;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.nurse-data-section {
+  margin-top: 20px;
+}
+
+.nurse-data-section h3 {
+  margin: 0 0 12px;
+  color: #1f3160;
+}
+
+.nurse-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e1e8f5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.nurse-table thead th {
+  background: #edf3ff;
+  color: #1f3160;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #d6e2fa;
+}
+
+.nurse-table tbody td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #edf1f8;
+  color: #344767;
+}
+
+.nurse-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.table-call-link {
+  display: inline-block;
+  color: #0b6bcb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.table-call-link:hover {
+  text-decoration: underline;
+}
+
+/* Department contacts enhancements */
+.contacts-page .hotline-card {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #fff1f1 0%, #ffe7e7 100%);
+  border: 1px solid #ffcaca;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.contacts-page .hotline-card h3 {
+  margin: 0;
+  color: #8f1d1d;
+}
+
+.contacts-page .hotline-number {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.call-btn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #c62828;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.call-btn:hover {
+  background: #a61f1f;
+}
+
+.call-btn.disabled {
+  background: #9db2d0;
+  pointer-events: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .nurse-dashboard {
@@ -257,6 +380,26 @@
 
   .profile-page {
     padding: 20px;
+  }
+
+  .dashboard-main {
+    padding: 16px;
+  }
+
+  .nurse-page {
+    padding: 16px;
+  }
+
+  .contacts-page .hotline-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .nurse-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 
   .form-grid {

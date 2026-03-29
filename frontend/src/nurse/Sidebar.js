@@ -15,50 +15,8 @@ const Sidebar = () => {
           to="/NurseDashboard"
           className={location.pathname === "/NurseDashboard" ? "nav-item active" : "nav-item"}
         >
-          <i className="icon">🏠</i>
-          <span>Dashboard</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/profile"
-          className={isActive("/profile") ? "nav-item active" : "nav-item"}
-        >
           <i className="icon">👤</i>
           <span>My Profile</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/patients"
-          className={isActive("/patients") ? "nav-item active" : "nav-item"}
-        >
-          <i className="icon">🏥</i>
-          <span>My Patients</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/ward-management"
-          className={isActive("/ward-management") ? "nav-item active" : "nav-item"}
-        >
-          <i className="icon">🛏️</i>
-          <span>Ward Management</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/medication"
-          className={isActive("/medication") ? "nav-item active" : "nav-item"}
-        >
-          <i className="icon">💊</i>
-          <span>Medication</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/vital-signs"
-          className={isActive("/vital-signs") ? "nav-item active" : "nav-item"}
-        >
-          <i className="icon">❤️</i>
-          <span>Vital Signs</span>
-        </Link>
-        <Link
-          to="/NurseDashboard/reports"
-          className={isActive("/reports") ? "nav-item active" : "nav-item"}
-        >
-          <i className="icon">📋</i>
-          <span>Reports</span>
         </Link>
         <Link
           to="/NurseDashboard/schedule"
@@ -68,11 +26,18 @@ const Sidebar = () => {
           <span>My Schedule</span>
         </Link>
         <Link
-          to="/NurseDashboard/telemedicine"
-          className={isActive("/telemedicine") ? "nav-item active" : "nav-item"}
+          to="/NurseDashboard/contacts"
+          className={isActive("/contacts") ? "nav-item active" : "nav-item"}
         >
-          <i className="icon">💻</i>
-          <span>Telemedicine</span>
+          <i className="icon">📞</i>
+          <span>Department Contacts</span>
+        </Link>
+        <Link
+          to="/NurseDashboard/patients"
+          className={isActive("/patients") ? "nav-item active" : "nav-item"}
+        >
+          <i className="icon">🏥</i>
+          <span>Assigned Patients</span>
         </Link>
       </nav>
       <div className="sidebar-footer">

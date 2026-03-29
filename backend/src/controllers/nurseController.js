@@ -1,12 +1,134 @@
 // src/controllers/nurseController.js
 import { Op } from 'sequelize';
-import { Appointment, Nurse, NursePatient, Report, User } from '../models/index.js';
+import {
+  Appointment,
+  Department,
+  Doctor,
+  EmergencySector,
+  Hospital,
+  MedicalStaff,
+  Nurse,
+  NursePatient,
+  Report,
+  User,
+} from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
+
+const normalizeName = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 
 const getAssignedPatientIds = async (nurseId) => {
   const mappings = await NursePatient.findAll({ where: { N_ID: nurseId }, attributes: ['P_ID'] });
   return mappings.map((m) => m.P_ID).filter((id) => Number.isInteger(id));
+};
+
+const getNurseDepartmentContext = async (nurseId) => {
+  const nurse = await Nurse.findByPk(nurseId, {
+    attributes: ['id', 'department'],
+  });
+
+  if (!nurse) {
+    return {
+      nurse: null,
+      departmentId: null,
+      departmentName: '',
+    };
+  }
+
+  let departmentId = null;
+  let departmentName = String(nurse.department || '').trim();
+
+  if (departmentName) {
+    const department = await Department.findOne({
+      where: { name: departmentName },
+      attributes: ['id', 'name'],
+    });
+    if (department) {
+      departmentId = department.id;
+      departmentName = String(department.name || departmentName);
+    }
+  }
+
+  return {
+    nurse,
+    departmentId,
+    departmentName,
+  };
+};
+
+const getDepartmentDoctorIds = async ({ departmentId, departmentName }) => {
+  const whereClause = {};
+
+  if (departmentId) {
+    whereClause.Dept_ID = departmentId;
+  } else if (departmentName) {
+    whereClause.department = departmentName;
+  } else {
+    return [];
+  }
+
+  const doctors = await Doctor.findAll({ where: whereClause, attributes: ['id'] });
+  let doctorIds = doctors.map((doctor) => doctor.id).filter((id) => Number.isInteger(id));
+
+  // Fallback for naming mismatches, e.g. "Dermatology" vs "Dermatology & Venereology".
+  if (!doctorIds.length && departmentName && !departmentId) {
+    const normalizedDepartment = normalizeName(departmentName);
+    const allDoctors = await Doctor.findAll({ attributes: ['id', 'department'] });
+    doctorIds = allDoctors
+      .filter((doctor) => {
+        const doctorDepartment = normalizeName(doctor.department);
+        return (
+          doctorDepartment === normalizedDepartment ||
+          doctorDepartment.includes(normalizedDepartment) ||
+          normalizedDepartment.includes(doctorDepartment)
+        );
+      })
+      .map((doctor) => doctor.id)
+      .filter((id) => Number.isInteger(id));
+  }
+
+  return [...new Set(doctorIds)];
+};
+
+const getDepartmentPatientIds = async ({ departmentId, departmentName }) => {
+  const doctorIds = await getDepartmentDoctorIds({ departmentId, departmentName });
+  if (!doctorIds.length) {
+    return [];
+  }
+
+  const appointments = await Appointment.findAll({
+    where: { D_ID: { [Op.in]: doctorIds } },
+    attributes: ['P_ID'],
+  });
+
+  return [...new Set(appointments.map((row) => row.P_ID).filter((id) => Number.isInteger(id)))];
+};
+
+const getScopedNursePatientIds = async (nurseId) => {
+  const [assignedIds, departmentContext] = await Promise.all([
+    getAssignedPatientIds(nurseId),
+    getNurseDepartmentContext(nurseId),
+  ]);
+
+  const departmentPatientIds = await getDepartmentPatientIds({
+    departmentId: departmentContext.departmentId,
+    departmentName: departmentContext.departmentName,
+  });
+
+  if (!departmentPatientIds.length) {
+    return assignedIds;
+  }
+
+  if (!assignedIds.length) {
+    return departmentPatientIds;
+  }
+
+  const departmentSet = new Set(departmentPatientIds);
+  return assignedIds.filter((id) => departmentSet.has(id));
 };
 
 export const getNurseDashboardSummary = async (req, res) => {
@@ -45,9 +167,9 @@ export const getNurseDashboardSummary = async (req, res) => {
 
 export const getMyNursePatients = async (req, res) => {
   try {
-    const patientIds = await getAssignedPatientIds(req.user.id);
+    const patientIds = await getScopedNursePatientIds(req.user.id);
     if (!patientIds.length) {
-      return res.json(formatResponse(true, 'Assigned nurse patients fetched', []));
+      return res.json(formatResponse(true, 'Department-scoped nurse patients fetched', []));
     }
 
     const [patients, latestAppointments] = await Promise.all([
@@ -82,7 +204,7 @@ export const getMyNursePatients = async (req, res) => {
       };
     });
 
-    return res.json(formatResponse(true, 'Assigned nurse patients fetched', payload));
+    return res.json(formatResponse(true, 'Department-scoped nurse patients fetched', payload));
   } catch (err) {
     return handleError(res, err);
   }
@@ -91,7 +213,7 @@ export const getMyNursePatients = async (req, res) => {
 export const getNurseSchedule = async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const patientIds = await getAssignedPatientIds(req.user.id);
+    const patientIds = await getScopedNursePatientIds(req.user.id);
     if (!patientIds.length) {
       return res.json(formatResponse(true, 'Nurse schedule fetched', []));
     }
@@ -107,11 +229,19 @@ export const getNurseSchedule = async (req, res) => {
     });
 
     const uniquePatientIds = [...new Set(appointments.map((a) => a.P_ID))];
-    const patients = await User.findAll({
-      where: { id: uniquePatientIds },
-      attributes: ['id', 'name'],
-    });
+    const uniqueDoctorIds = [...new Set(appointments.map((a) => a.D_ID).filter((id) => Number.isInteger(id)))];
+    const [patients, doctors] = await Promise.all([
+      User.findAll({
+        where: { id: uniquePatientIds },
+        attributes: ['id', 'name'],
+      }),
+      User.findAll({
+        where: { id: uniqueDoctorIds },
+        attributes: ['id', 'name'],
+      }),
+    ]);
     const patientMap = new Map(patients.map((p) => [p.id, p.name]));
+    const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
 
     const payload = appointments.map((a) => ({
       id: a.id,
@@ -121,9 +251,127 @@ export const getNurseSchedule = async (req, res) => {
       patientId: a.P_ID,
       patientName: patientMap.get(a.P_ID) || `Patient #${a.P_ID}`,
       doctorId: a.D_ID,
+      doctorName: doctorMap.get(a.D_ID) || (a.D_ID ? `Doctor #${a.D_ID}` : '-'),
     }));
 
     return res.json(formatResponse(true, 'Nurse schedule fetched', payload));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+export const getNurseOperationsContext = async (req, res) => {
+  try {
+    const { departmentId, departmentName } = await getNurseDepartmentContext(req.user.id);
+
+    const doctorWhere = {};
+    if (departmentId) {
+      doctorWhere.Dept_ID = departmentId;
+    } else if (departmentName) {
+      doctorWhere.department = departmentName;
+    }
+
+    const doctors = await Doctor.findAll({
+      where: doctorWhere,
+      attributes: ['id', 'speciality', 'department', 'timeSchedule', 'availableTime', 'Dept_ID'],
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'name', 'email', 'phone'],
+        },
+        {
+          model: Department,
+          attributes: ['id', 'name', 'H_ID'],
+          include: [
+            {
+              model: Hospital,
+              attributes: ['id', 'name', 'location'],
+            },
+          ],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    const hospitalIds = [...new Set(
+      doctors
+        .map((doctor) => doctor.Department?.H_ID)
+        .filter((id) => Number.isInteger(id))
+    )];
+
+    const staffContacts = await MedicalStaff.findAll({
+      attributes: ['id', 'staffRole', 'sector', 'department', 'timeSchedule', 'SEC_ID'],
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'name', 'email', 'phone'],
+        },
+        {
+          model: EmergencySector,
+          attributes: ['id', 'name', 'H_ID'],
+          include: [
+            {
+              model: Hospital,
+              attributes: ['id', 'name', 'location'],
+            },
+          ],
+          required: false,
+        },
+        {
+          model: Department,
+          attributes: ['id', 'name', 'H_ID'],
+          include: [
+            {
+              model: Hospital,
+              attributes: ['id', 'name', 'location'],
+            },
+          ],
+          required: false,
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+    });
+
+    const filteredHospitalStaff = staffContacts.filter((staff) => {
+      const hasHospitalMetadata = Number.isInteger(staff.EmergencySector?.H_ID) || Number.isInteger(staff.Department?.H_ID);
+      const inHospitalScope =
+        !hospitalIds.length ||
+        !hasHospitalMetadata ||
+        hospitalIds.includes(staff.EmergencySector?.H_ID) ||
+        hospitalIds.includes(staff.Department?.H_ID);
+
+      return inHospitalScope;
+    });
+
+    const payload = {
+      department: {
+        id: departmentId,
+        name: departmentName || null,
+      },
+      doctors: doctors.map((doctor) => ({
+        id: doctor.id,
+        name: doctor.User?.name || `Doctor #${doctor.id}`,
+        email: doctor.User?.email || null,
+        phone: doctor.User?.phone || null,
+        speciality: doctor.speciality || null,
+        department: doctor.Department?.name || doctor.department || null,
+        availability: doctor.availableTime || doctor.timeSchedule || null,
+        hospitalName: doctor.Department?.Hospital?.name || null,
+      })),
+      emergencyContacts: filteredHospitalStaff.map((staff) => ({
+        id: staff.id,
+        name: staff.User?.name || `Staff #${staff.id}`,
+        role: staff.staffRole || 'MEDICAL STAFF',
+        email: staff.User?.email || null,
+        phone: staff.User?.phone || null,
+        sector: staff.EmergencySector?.name || staff.sector || 'General',
+        department: staff.Department?.name || staff.department || null,
+        hospitalName: staff.EmergencySector?.Hospital?.name || staff.Department?.Hospital?.name || null,
+      })),
+    };
+
+    return res.json(formatResponse(true, 'Nurse operations context fetched', payload));
   } catch (err) {
     return handleError(res, err);
   }
