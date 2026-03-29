@@ -1,12 +1,24 @@
 // src/controllers/reportController.js
 import { Report } from '../models/index.js';
+import { Appointment, User } from '../models/index.js';
+import { Doctor } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
 // Create a new report
 export const createReport = async (req, res) => {
   try {
-    const report = await Report.create(req.body);
+    const payload = { ...req.body };
+    const reportType = String(payload.reportType || '').toUpperCase();
+
+    // Ensure prescriptions always carry the prescribing doctor identity.
+    if (reportType === 'PRESCRIPTION' && req.user?.role === 'DOCTOR') {
+      payload.D_ID = req.user.id;
+      payload.doctorName = req.user.name || payload.doctorName || null;
+      payload.hospitalName = payload.hospitalName || 'MediPortal Hospital';
+    }
+
+    const report = await Report.create(payload);
     res.status(201).json(formatResponse(true, 'Report created', report));
   } catch (err) {
     handleError(res, err);
@@ -18,7 +30,62 @@ export const getAllReports = async (req, res) => {
   try {
     const whereClause = req.user?.role === 'PATIENT' ? { P_ID: req.user.id } : undefined;
     const reports = await Report.findAll({ where: whereClause, order: [['date', 'DESC']] });
-    res.json(formatResponse(true, 'All reports fetched', reports));
+
+    const enrichedReports = await Promise.all(
+      reports.map(async (report) => {
+        const reportJson = report.toJSON();
+        const isPrescription = String(reportJson.reportType || '').toUpperCase() === 'PRESCRIPTION';
+
+        if (!isPrescription) {
+          return reportJson;
+        }
+
+        if (reportJson.D_ID) {
+          const doctorUser = await User.findByPk(reportJson.D_ID, { attributes: ['id', 'name'] });
+          const doctorProfile = await Doctor.findByPk(reportJson.D_ID, { attributes: ['department'] });
+
+          if (doctorUser?.name) {
+            reportJson.doctorName = doctorUser.name;
+          }
+
+          if (doctorProfile?.department) {
+            reportJson.doctorDepartment = doctorProfile.department;
+          }
+
+          if (reportJson.doctorName && reportJson.doctorDepartment) {
+            return reportJson;
+          }
+        }
+
+        if (reportJson.P_ID) {
+          const fallbackAppointment = await Appointment.findOne({
+            where: { P_ID: reportJson.P_ID },
+            order: [['date', 'DESC'], ['createdAt', 'DESC']],
+            attributes: ['D_ID'],
+          });
+
+          const fallbackDoctorId = fallbackAppointment?.D_ID;
+          if (fallbackDoctorId) {
+            const fallbackDoctor = await User.findByPk(fallbackDoctorId, { attributes: ['id', 'name'] });
+            const fallbackDoctorProfile = await Doctor.findByPk(fallbackDoctorId, { attributes: ['department'] });
+
+            reportJson.D_ID = reportJson.D_ID || fallbackDoctorId;
+
+            if (fallbackDoctor?.name) {
+              reportJson.doctorName = fallbackDoctor.name;
+            }
+
+            if (fallbackDoctorProfile?.department) {
+              reportJson.doctorDepartment = fallbackDoctorProfile.department;
+            }
+          }
+        }
+
+        return reportJson;
+      })
+    );
+
+    res.json(formatResponse(true, 'All reports fetched', enrichedReports));
   } catch (err) {
     handleError(res, err);
   }

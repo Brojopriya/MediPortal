@@ -19,6 +19,17 @@ export default (sequelize, DataTypes) => {
         field: 'Status',
         defaultValue: 'PENDING'
       },
+      D_ID: { type: DataTypes.INTEGER, allowNull: true },
+      doctorName: {
+        type: DataTypes.STRING,
+        field: 'Doctor_Name',
+        allowNull: true
+      },
+      hospitalName: {
+        type: DataTypes.STRING,
+        field: 'Hospital_Name',
+        allowNull: true
+      },
       Test_ID: { type: DataTypes.INTEGER, allowNull: true },
       S_ID: { type: DataTypes.INTEGER, allowNull: true },
       P_ID: { type: DataTypes.INTEGER, allowNull: true }

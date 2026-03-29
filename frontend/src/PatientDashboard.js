@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
 import Sidebar from "./patient/Sidebar";
 import Profile from "./patient/Profile";
 import "./PatientDashboard.css";
@@ -254,32 +255,195 @@ const Appointments = () => {
   );
 };
 
-const MedicalRecords = () => (
-  <div className="dashboard-content">
-    <div className="page-header">
-      <h1 className="page-title">Medical Records</h1>
-      <p className="page-subtitle">Access your complete medical history</p>
-    </div>
-    <div className="content-card">
-      <div className="empty-state">
-        <p>📋 Your medical records will appear here</p>
-        <p className="empty-subtitle">This feature is coming soon</p>
+const MedicalRecords = () => {
+  const [appointments, setAppointments] = React.useState([]);
+  const [doctors, setDoctors] = React.useState([]);
+  const [loadingRecords, setLoadingRecords] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadMedicalRecords = async () => {
+      setLoadingRecords(true);
+      const [appointmentsRes, doctorsRes] = await Promise.all([
+        fetchMyAppointments(),
+        fetchDoctors(),
+      ]);
+
+      if (!mounted) {
+        return;
+      }
+
+      setAppointments(Array.isArray(appointmentsRes?.data) ? appointmentsRes.data : []);
+      setDoctors(Array.isArray(doctorsRes?.data) ? doctorsRes.data : []);
+      setLoadingRecords(false);
+    };
+
+    loadMedicalRecords();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const getDoctorName = React.useCallback((doctorId) => {
+    const doctor = doctors.find((entry) => String(entry?.id) === String(doctorId));
+    if (doctor?.name) {
+      return doctor.name;
+    }
+    return doctorId ? `Dr. #${doctorId}` : "Doctor Not Assigned";
+  }, [doctors]);
+
+  return (
+    <div className="dashboard-content">
+      <div className="page-header">
+        <h1 className="page-title">Medical Records</h1>
+        <p className="page-subtitle">Your appointment history with doctor and date details</p>
+      </div>
+
+      <div className="content-card compact-card">
+        <h3 className="card-title">Appointment Summary</h3>
+        <p className="next-appointment-text">
+          Total Appointments Taken: <strong>{loadingRecords ? "..." : appointments.length}</strong>
+        </p>
+      </div>
+
+      <div className="content-card">
+        <h3 className="card-title">Appointment Records</h3>
+        {loadingRecords ? (
+          <div className="empty-state">
+            <p>Loading medical records...</p>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="empty-state">
+            <p>No appointments found</p>
+            <p className="empty-subtitle">Your doctor visit history will appear here.</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Doctor</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((appointment) => (
+                  <tr key={appointment.id}>
+                    <td>{getDoctorName(appointment.D_ID)}</td>
+                    <td>{appointment.date ? new Date(appointment.date).toLocaleDateString() : "-"}</td>
+                    <td>{appointment.time || "-"}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(appointment.status)}`}>
+                        {appointment.status || "SCHEDULED"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Prescriptions = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [prescriptions, setPrescriptions] = React.useState([]);
   const [loadingPrescriptions, setLoadingPrescriptions] = React.useState(true);
+
+  const resolveDoctorName = React.useCallback((report) => {
+    if (report?.doctorName || report?.doctor || report?.doctor_full_name) {
+      return report?.doctorName || report?.doctor || report?.doctor_full_name;
+    }
+
+    const doctorId = report?.D_ID ?? report?.doctorId ?? report?.Doctor_ID ?? null;
+    if (doctorId) {
+      return `Dr. #${doctorId}`;
+    }
+
+    if (report?.createdBy) {
+      return String(report.createdBy);
+    }
+
+    if (report?.staffName) {
+      return String(report.staffName);
+    }
+
+    if (report?.doctorName) {
+      return report.doctorName;
+    }
+
+    return "Doctor Name Not Available";
+  }, []);
+
+  const resolveHospitalName = React.useCallback((report) => {
+    if (report?.hospitalName || report?.hospital || report?.hospital_name) {
+      return report?.hospitalName || report?.hospital || report?.hospital_name;
+    }
+    return "MediPortal Hospital";
+  }, []);
+
+  const resolveDoctorDepartment = React.useCallback((report) => {
+    if (report?.doctorDepartment || report?.department || report?.doctor_department) {
+      return report?.doctorDepartment || report?.department || report?.doctor_department;
+    }
+    return "Department Not Available";
+  }, []);
+
+  const downloadPrescriptionPdf = React.useCallback((report) => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const doctorName = resolveDoctorName(report);
+    const doctorDepartment = resolveDoctorDepartment(report);
+    const hospitalName = resolveHospitalName(report);
+    const prescriptionId = `PRX-${report.id}`;
+    const issuedDate = report?.date ? new Date(report.date).toLocaleDateString() : "-";
+    const patientName = user?.name || "Patient";
+    const notes = report?.notes || "No clinical notes provided.";
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Medical Prescription", 40, 52);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Hospital: ${hospitalName}`, 40, 74);
+    doc.text(`Prescription ID: ${prescriptionId}`, 40, 92);
+    doc.text(`Date: ${issuedDate}`, 320, 92);
+
+    doc.setDrawColor(24, 74, 117);
+    doc.line(40, 104, 555, 104);
+
+    doc.text(`Patient Name: ${patientName}`, 40, 130);
+    doc.text(`Doctor Name: ${doctorName}`, 40, 148);
+    doc.text(`Department: ${doctorDepartment}`, 40, 166);
+    doc.text(`Type: ${String(report?.reportType || "PRESCRIPTION").toUpperCase()}`, 40, 184);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Prescription Details", 40, 214);
+    doc.setFont("helvetica", "normal");
+
+    const wrappedNotes = doc.splitTextToSize(notes, 500);
+    doc.text(wrappedNotes, 40, 236);
+
+    doc.setFontSize(10);
+    doc.text("This document was generated from MediPortal Patient Dashboard.", 40, 780);
+
+    doc.save(`${prescriptionId}.pdf`);
+  }, [resolveDoctorDepartment, resolveDoctorName, resolveHospitalName, user?.name]);
 
   React.useEffect(() => {
     let mounted = true;
     const loadPrescriptions = async () => {
       setLoadingPrescriptions(true);
-      const res = await fetchReports();
+      const reportsRes = await fetchReports();
+
       if (mounted) {
-        const allReports = Array.isArray(res?.data) ? res.data : [];
+        const allReports = Array.isArray(reportsRes?.data) ? reportsRes.data : [];
         setPrescriptions(allReports.filter(isPrescriptionReport));
         setLoadingPrescriptions(false);
       }
@@ -294,44 +458,80 @@ const Prescriptions = () => {
     <div className="dashboard-content">
       <div className="page-header">
         <h1 className="page-title">My Prescriptions</h1>
-        <p className="page-subtitle">View your current and past prescriptions</p>
+        <p className="page-subtitle">Professional prescriptions from your doctor, with downloadable PDF copies</p>
       </div>
       <div className="content-card">
+        {!loadingPrescriptions && prescriptions.length > 0 && (
+          <div className="prescriptions-summary" aria-label="Prescription summary">
+            <div className="prescription-summary-item">
+              <span className="summary-label">Total Prescriptions</span>
+              <span className="summary-value">{prescriptions.length}</span>
+            </div>
+            <div className="prescription-summary-item">
+              <span className="summary-label">Latest Issued</span>
+              <span className="summary-value">
+                {prescriptions[0]?.date ? new Date(prescriptions[0].date).toLocaleDateString() : "-"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {loadingPrescriptions ? (
           <div className="empty-state">
             <p>Loading prescriptions...</p>
           </div>
         ) : prescriptions.length === 0 ? (
           <div className="empty-state">
-            <p>💊 No prescriptions available</p>
+            <p>No prescriptions available</p>
             <p className="empty-subtitle">Doctor prescriptions will appear here once published.</p>
           </div>
         ) : (
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Prescription ID</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {prescriptions.map((report) => (
-                  <tr key={report.id}>
-                    <td>PRX-{report.id}</td>
-                    <td>{report.date ? new Date(report.date).toLocaleDateString() : "-"}</td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(report.status)}`}>
-                        {report.status || "PENDING"}
-                      </span>
-                    </td>
-                    <td>{report.notes || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="prescription-list">
+            {prescriptions.map((report) => (
+              <article key={report.id} className="prescription-sheet">
+                <div className="prescription-sheet-head">
+                  <div>
+                    <h3>Medical Prescription</h3>
+                    <p>{resolveHospitalName(report)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary prescription-download-btn"
+                    onClick={() => downloadPrescriptionPdf(report)}
+                  >
+                    Download PDF
+                  </button>
+                </div>
+
+                <div className="prescription-meta-grid">
+                  <div className="prescription-meta-item">
+                    <span className="meta-label">Prescription ID</span>
+                    <span className="meta-value">PRX-{report.id}</span>
+                  </div>
+                  <div className="prescription-meta-item">
+                    <span className="meta-label">Date</span>
+                    <span className="meta-value">{report.date ? new Date(report.date).toLocaleDateString() : "-"}</span>
+                  </div>
+                  <div className="prescription-meta-item">
+                    <span className="meta-label">Doctor Name</span>
+                    <span className="meta-value">{resolveDoctorName(report)}</span>
+                  </div>
+                  <div className="prescription-meta-item">
+                    <span className="meta-label">Doctor Department</span>
+                    <span className="meta-value">{resolveDoctorDepartment(report)}</span>
+                  </div>
+                  <div className="prescription-meta-item">
+                    <span className="meta-label">Hospital Name</span>
+                    <span className="meta-value">{resolveHospitalName(report)}</span>
+                  </div>
+                </div>
+
+                <div className="prescription-body">
+                  <h4>Prescription Details</h4>
+                  <p>{report.notes || "No clinical notes provided."}</p>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </div>

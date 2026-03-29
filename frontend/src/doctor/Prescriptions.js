@@ -18,6 +18,7 @@ const createEmptyForm = () => ({
 });
 
 const Prescriptions = () => {
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const [patients, setPatients] = useState([]);
   const [form, setForm] = useState(createEmptyForm());
   const [saving, setSaving] = useState(false);
@@ -145,6 +146,10 @@ const Prescriptions = () => {
     const result = await createReport({
       date: new Date().toISOString().slice(0, 10),
       P_ID: Number(form.patientId),
+      D_ID: currentUser?.id || null,
+      doctorName: currentUser?.name || null,
+      doctorDepartment: currentUser?.professionalDetails?.department || null,
+      hospitalName: "MediPortal Hospital",
       Test_ID: null,
       S_ID: null,
       reportType: "PRESCRIPTION",

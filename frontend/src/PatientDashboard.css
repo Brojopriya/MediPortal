@@ -305,6 +305,162 @@
   padding: 18px 22px;
 }
 
+/* Prescriptions */
+.patient-dashboard .prescriptions-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.patient-dashboard .prescription-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #d4e2fa;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
+}
+
+.patient-dashboard .summary-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #365680;
+  font-weight: 700;
+}
+
+.patient-dashboard .summary-value {
+  color: #0b1f44;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.patient-dashboard .prescriptions-table-container {
+  border-color: #cdddf8;
+}
+
+.patient-dashboard .prescription-list {
+  display: grid;
+  gap: 16px;
+}
+
+.patient-dashboard .prescription-sheet {
+  border: 1px solid #cadbf5;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
+  padding: 18px;
+}
+
+.patient-dashboard .prescription-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d7e4f8;
+}
+
+.patient-dashboard .prescription-sheet-head h3 {
+  margin: 0;
+  color: #0f2f56;
+  font-size: 1.1rem;
+}
+
+.patient-dashboard .prescription-sheet-head p {
+  margin: 4px 0 0;
+  color: #33557f;
+  font-size: 0.92rem;
+}
+
+.patient-dashboard .prescription-download-btn {
+  white-space: nowrap;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+
+.patient-dashboard .prescription-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.patient-dashboard .prescription-meta-item {
+  background: #ffffff;
+  border: 1px solid #d9e6fa;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patient-dashboard .meta-label {
+  color: #4a668e;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.patient-dashboard .meta-value {
+  color: #0d2c4f;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.patient-dashboard .prescription-body {
+  margin-top: 12px;
+  border: 1px solid #d9e6fa;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.patient-dashboard .prescription-body h4 {
+  margin: 0;
+  color: #143b67;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.patient-dashboard .prescription-body p {
+  margin: 8px 0 0;
+  color: #263f63;
+  line-height: 1.52;
+  white-space: pre-wrap;
+}
+
+.patient-dashboard .prescriptions-table th {
+  background: #f2f7ff;
+  color: #15345f;
+}
+
+.patient-dashboard .prescriptions-table td {
+  vertical-align: top;
+}
+
+.patient-dashboard .prescription-id-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c6d9fb;
+  background: #edf4ff;
+  color: #184575;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.patient-dashboard .prescription-notes-cell {
+  min-width: 240px;
+  color: #263f63;
+  line-height: 1.45;
+}
+
 /* Teleconsultation Request Form */
 .patient-dashboard .teleconsultation-request-card {
   margin-bottom: 16px;
@@ -523,6 +679,21 @@
 .patient-dashboard .status-rejected {
   background: #dbeafe;
   color: #1e40af;
+}
+
+.patient-dashboard .status-pending {
+  background: #e6efff;
+  color: #1e40af;
+}
+
+.patient-dashboard .status-in-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.patient-dashboard .status-distributed {
+  background: #bfdbfe;
+  color: #1e3a8a;
 }
 
 /* Empty State */
@@ -759,5 +930,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .patient-dashboard .prescription-sheet-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
