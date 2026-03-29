@@ -93,6 +93,11 @@ const DEFAULT_ADMIN_EMAIL = 'brojopriya.admin@mediportal.local';
 const DEFAULT_HOSPITAL_NAME = 'MediPortal';
 const DEFAULT_HOSPITAL_LOCATION = 'Main Hospital Campus';
 
+const shouldSyncSchema = String(process.env.DB_SYNC || '').toLowerCase() === 'true';
+
+const shouldAlterSchema =
+  String(process.env.DB_SYNC_ALTER || '').toLowerCase() === 'true' && !isProduction;
+
 const validateDatabaseEnv = () => {
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 
@@ -162,9 +167,12 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully!');
 
-    // Sync all models (create tables if they don’t exist)
-    await sequelize.sync({ alter: true }); // Safe mode: update schema without dropping data
-    console.log('✅ All tables synced successfully!');
+    if (shouldSyncSchema) {
+      await sequelize.sync({ alter: shouldAlterSchema });
+      console.log(`✅ Database schema sync completed (alter=${shouldAlterSchema})`);
+    } else {
+      console.log('ℹ️ Skipping sequelize.sync() in production mode (set DB_SYNC=true to enable)');
+    }
 
     await ensureDefaultHospital();
     await ensureDefaultAdmin();
