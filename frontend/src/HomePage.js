@@ -303,19 +303,19 @@ const HomePage = () => {
         <p className="section-intro">Comprehensive healthcare solutions with verified professionals and secure access.</p>
         <div className="services-grid">
           <div className="feature">
-            <h3>🎖️ Verified Care Teams</h3>
+            <h3>Verified Care Teams</h3>
             <p>Doctor, nurse, and staff accounts are reviewed through admin approval workflows.</p>
           </div>
           <div className="feature">
-            <h3>🔐 Secure Access</h3>
+            <h3>Secure Access</h3>
             <p>Role-based access protects patient information and limits visibility by responsibility.</p>
           </div>
           <div className="feature">
-            <h3>📊 Operational Visibility</h3>
+            <h3>Operational Visibility</h3>
             <p>Appointments, records, and clinical coordination are tracked in one connected system.</p>
           </div>
           <div className="feature">
-            <h3>🕐 Continuous Availability</h3>
+            <h3>Continuous Availability</h3>
             <p>Emergency routing and telemedicine support extend care beyond physical visits.</p>
           </div>
         </div>
@@ -372,19 +372,19 @@ const HomePage = () => {
         <p className="section-intro">A complete healthcare platform for patients, doctors, and medical staff.</p>
         <div className="services-grid">
           <div className="feature">
-            <h3>📅 Appointment Scheduling</h3>
+            <h3>Appointment Scheduling</h3>
             <p>Coordinate in-person and virtual appointments with specialty-based doctor matching.</p>
           </div>
           <div className="feature">
-            <h3>💻 Telemedicine Services</h3>
+            <h3>Telemedicine Services</h3>
             <p>Enable secure remote consultations with documented clinical follow-up.</p>
           </div>
           <div className="feature">
-            <h3>📋 Electronic Health Records</h3>
+            <h3>Electronic Health Records</h3>
             <p>Maintain centralized patient histories for authorized, role-specific access.</p>
           </div>
           <div className="feature">
-            <h3>🤝 Care Coordination</h3>
+            <h3>Care Coordination</h3>
             <p>Support referrals, follow-up plans, and medication continuity across care teams.</p>
           </div>
         </div>
@@ -437,25 +437,25 @@ const HomePage = () => {
         <p className="section-intro">A clear and secure patient experience from appointment to follow-up.</p>
         <div className="user-features-grid">
           <div className="user-feature">
-            <div className="feature-icon">📅</div>
+            <div className="feature-icon">BOOKING</div>
             <h3>Book Appointments</h3>
             <p>Find available specialists and schedule consultations without phone-based delays.</p>
             <button className="feature-btn" onClick={handleBookAppointment}>Schedule Now</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">🗂️</div>
+            <div className="feature-icon">RECORDS</div>
             <h3>Medical Records</h3>
             <p>Review diagnosis history, prescriptions, and reports from a single patient profile.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Access Records</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">🎥</div>
+            <div className="feature-icon">VIRTUAL</div>
             <h3>Teleconsultation</h3>
             <p>Connect with clinicians online and continue care even when in-person visits are not possible.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Start Session</button>
           </div>
           <div className="user-feature">
-            <div className="feature-icon">💊</div>
+            <div className="feature-icon">PHARMACY</div>
             <h3>Prescriptions</h3>
             <p>Track medication plans and receive digital prescriptions after consultation.</p>
             <button className="feature-btn" onClick={() => navigate('/signup')}>Manage Plan</button>
