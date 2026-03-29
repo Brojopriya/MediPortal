@@ -7,6 +7,7 @@ import {
   fetchNursePatients,
   fetchNurseSchedule,
 } from "./api";
+import Telemedicine from "./nurse/Telemedicine";
 import "./NurseDashboard.css";
 
 const EmptyState = ({ title, message }) => (
@@ -212,6 +213,7 @@ const NurseDashboard = () => {
           <Route path="vital-signs" element={<VitalSigns />} />
           <Route path="reports" element={<Reports />} />
           <Route path="schedule" element={<Schedule />} />
+          <Route path="telemedicine" element={<Telemedicine />} />
         </Routes>
       </main>
     </div>

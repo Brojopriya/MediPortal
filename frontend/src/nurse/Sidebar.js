@@ -67,6 +67,13 @@ const Sidebar = () => {
           <i className="icon">📅</i>
           <span>My Schedule</span>
         </Link>
+        <Link
+          to="/NurseDashboard/telemedicine"
+          className={isActive("/telemedicine") ? "nav-item active" : "nav-item"}
+        >
+          <i className="icon">💻</i>
+          <span>Telemedicine</span>
+        </Link>
       </nav>
       <div className="sidebar-footer">
         <Link to="/" className="nav-item">

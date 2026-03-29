@@ -6,6 +6,22 @@ const extractScheduledTime = (session) => {
   return match ? match[1] : "";
 };
 
+const hasMeetingLink = (session) => String(session?.media || "").trim().length > 0;
+
+const isScheduledSession = (session) => {
+  const status = String(session?.requestStatus || "").toUpperCase();
+  return status === "DOCTOR_SCHEDULED" || hasMeetingLink(session);
+};
+
+const isVerifiedWaitingForSchedule = (session) => {
+  const status = String(session?.requestStatus || "").toUpperCase();
+  const paymentStatus = String(session?.paymentStatus || "").toUpperCase();
+  if (isScheduledSession(session)) {
+    return false;
+  }
+  return status === "STAFF_APPROVED" || paymentStatus === "VERIFIED";
+};
+
 const Telemedicine = () => {
   const [sessions, setSessions] = useState([]);
   const [drafts, setDrafts] = useState({});
@@ -37,12 +53,12 @@ const Telemedicine = () => {
   }, [sessions]);
 
   const pendingForDoctor = useMemo(
-    () => sessions.filter((session) => String(session.requestStatus || "").toUpperCase() === "STAFF_APPROVED"),
+    () => sessions.filter((session) => isVerifiedWaitingForSchedule(session)),
     [sessions]
   );
 
   const scheduled = useMemo(
-    () => sessions.filter((session) => String(session.requestStatus || "").toUpperCase() === "DOCTOR_SCHEDULED"),
+    () => sessions.filter((session) => isScheduledSession(session)),
     [sessions]
   );
 
@@ -92,7 +108,7 @@ const Telemedicine = () => {
   return (
     <div className="appointments-page">
       <h2>Telemedicine</h2>
-      <p>Only staff-verified paid requests are shown here for scheduling.</p>
+      <p>Showing only staff-approved requests waiting for schedule and scheduled online sessions.</p>
 
       <h3>Verified Requests Waiting For Schedule</h3>
       {pendingForDoctor.length === 0 ? (
@@ -176,6 +192,7 @@ const Telemedicine = () => {
           </tbody>
         </table>
       )}
+
     </div>
   );
 };

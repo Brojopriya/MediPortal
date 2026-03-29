@@ -1,7 +1,7 @@
 // src/controllers/telemedicineController.js
 import { Telemedicine } from '../models/index.js';
 import { Doctor, Department, User } from '../models/index.js';
-import { MedicalStaff } from '../models/index.js';
+import { MedicalStaff, Nurse, NursePatient } from '../models/index.js';
 import { Op } from 'sequelize';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
@@ -211,7 +211,6 @@ export const getSessions = async (req, res) => {
 
     if (role === 'DOCTOR') {
       whereClause.D_ID = req.user.id;
-      whereClause.requestStatus = { [Op.in]: ['STAFF_APPROVED', 'DOCTOR_SCHEDULED'] };
     } else if (role === 'PATIENT') {
       whereClause.P_ID = req.user.id;
     } else if (role === 'STAFF') {
@@ -220,6 +219,29 @@ export const getSessions = async (req, res) => {
         return res.status(404).json(formatResponse(false, 'Staff profile not found'));
       }
       whereClause.S_ID = staff.id;
+    } else if (role === 'NURSE') {
+      const nurse = await Nurse.findByPk(req.user.id, { attributes: ['id'] });
+      if (!nurse) {
+        return res.status(404).json(formatResponse(false, 'Nurse profile not found'));
+      }
+
+      const assignments = await NursePatient.findAll({
+        where: { N_ID: nurse.id },
+        attributes: ['P_ID'],
+      });
+
+      const assignedPatientIds = assignments
+        .map((row) => Number(row.P_ID))
+        .filter((id) => Number.isInteger(id) && id > 0);
+
+      if (assignedPatientIds.length === 0) {
+        return res.json(formatResponse(true, 'No telemedicine sessions found', []));
+      }
+
+      whereClause.P_ID = { [Op.in]: assignedPatientIds };
+      whereClause.requestStatus = { [Op.in]: ['STAFF_APPROVED', 'DOCTOR_SCHEDULED'] };
+    } else {
+      return res.status(403).json(formatResponse(false, 'This role cannot access telemedicine sessions'));
     }
 
     const sessions = await Telemedicine.findAll({
