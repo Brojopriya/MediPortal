@@ -1,4 +1,4 @@
-import { Department, Diagnosis, EmergencySector, Hospital, Ward } from '../models/index.js';
+import { Department, Diagnosis, EmergencySector, Hospital, Report, Ward } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
@@ -298,6 +298,42 @@ export const createDiagnosticTest = async (req, res) => {
         price: Number(created.price) || 0,
       })
     );
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+export const deleteDiagnosticTest = async (req, res) => {
+  try {
+    const testId = Number(req.params.id);
+
+    if (!Number.isInteger(testId) || testId <= 0) {
+      return res.status(400).json(formatResponse(false, 'Valid diagnostic test ID is required'));
+    }
+
+    const test = await Diagnosis.findOne({ where: { id: testId, P_ID: null } });
+    if (!test) {
+      return res.status(404).json(formatResponse(false, 'Diagnostic test not found'));
+    }
+
+    let reportsCount = 0;
+    try {
+      reportsCount = await Report.count({ where: { Test_ID: testId } });
+    } catch (reportErr) {
+      const code = reportErr?.parent?.code || reportErr?.original?.code || reportErr?.code;
+      if (code !== 'ER_NO_SUCH_TABLE' && code !== 'ER_BAD_FIELD_ERROR') {
+        throw reportErr;
+      }
+    }
+    if (reportsCount > 0) {
+      return res.status(400).json(
+        formatResponse(false, 'Cannot delete diagnostic test because it is referenced by existing reports')
+      );
+    }
+
+    await test.destroy();
+
+    return res.json(formatResponse(true, 'Diagnostic test deleted successfully'));
   } catch (err) {
     return handleError(res, err);
   }

@@ -32,9 +32,52 @@ export const submitRequest = async (req, res) => {
       return res.status(400).json(formatResponse(false, 'Transaction ID is required'));
     }
 
-    const doctor = await Doctor.findByPk(doctorId);
+    let doctor = null;
+    try {
+      doctor = await Doctor.findByPk(doctorId);
+    } catch (err) {
+      console.error('Error finding doctor:', err.message);
+      doctor = null;
+    }
+
+    // Legacy data can contain DOCTOR users without a Doctor profile row.
+    // Auto-create a minimal profile so patients can still submit requests.
     if (!doctor) {
-      return res.status(404).json(formatResponse(false, 'Doctor not found'));
+      const doctorUser = await User.findByPk(doctorId, {
+        attributes: ['id', 'role', 'approvalStatus', 'professionalDetails'],
+      });
+
+      if (!doctorUser || String(doctorUser.role || '').toUpperCase() !== 'DOCTOR') {
+        return res.status(404).json(formatResponse(false, 'Doctor not found'));
+      }
+
+      if (String(doctorUser.approvalStatus || '').toUpperCase() !== 'APPROVED') {
+        return res.status(400).json(formatResponse(false, 'Selected doctor is not approved for telemedicine yet'));
+      }
+
+      let details = {};
+      try {
+        details = doctorUser.professionalDetails
+          ? JSON.parse(doctorUser.professionalDetails)
+          : {};
+      } catch {
+        details = {};
+      }
+
+      [doctor] = await Doctor.findOrCreate({
+        where: { id: doctorId },
+        defaults: {
+          id: doctorId,
+          department: String(details.department || '').trim() || null,
+          speciality: String(details.speciality || '').trim() || null,
+          timeSchedule: String(details.timeSchedule || '').trim() || null,
+          Dept_ID: Number.isInteger(Number(details.deptId)) ? Number(details.deptId) : null,
+        },
+      });
+    }
+
+    if (!doctor || !doctor.id) {
+      return res.status(404).json(formatResponse(false, 'Doctor profile unavailable'));
     }
 
     const payload = {
@@ -51,9 +94,55 @@ export const submitRequest = async (req, res) => {
       prescription: null,
     };
 
-    const request = await Telemedicine.create(payload);
+    // Support legacy Telemedicine schemas that may miss newer columns.
+    const payloadCandidates = [
+      payload,
+      {
+        D_ID: doctorId,
+        P_ID: req.user.id,
+        date,
+        paymentMethod: 'BKASH',
+        paymentNumber: TELEMEDICINE_BKASH_NUMBER,
+        transactionId: String(transactionId).trim(),
+      },
+      {
+        D_ID: doctorId,
+        P_ID: req.user.id,
+        date,
+        transactionId: String(transactionId).trim(),
+      },
+    ];
+
+    let request = null;
+    let lastErr = null;
+
+    for (const candidate of payloadCandidates) {
+      try {
+        request = await Telemedicine.create(candidate);
+        lastErr = null;
+        break;
+      } catch (createErr) {
+        const code = createErr?.parent?.code || createErr?.original?.code || createErr?.code;
+        if (code === 'ER_BAD_FIELD_ERROR' || code === 'ER_NO_SUCH_TABLE') {
+          lastErr = createErr;
+          continue;
+        }
+        throw createErr;
+      }
+    }
+
+    if (!request) {
+      if (lastErr) {
+        return res.status(500).json(
+          formatResponse(false, 'Telemedicine table schema is out of sync. Please restart backend to apply model changes.')
+        );
+      }
+      return res.status(500).json(formatResponse(false, 'Unable to submit telemedicine request'));
+    }
+
     res.status(201).json(formatResponse(true, 'Telemedicine request submitted. Waiting for staff verification.', request));
   } catch (err) {
+    console.error('Error in submitRequest:', err.message);
     handleError(res, err);
   }
 };
@@ -249,7 +338,7 @@ export const getSessions = async (req, res) => {
       include: [
         {
           model: Doctor,
-          attributes: ['id', 'department', 'Dept_ID'],
+          attributes: ['id', 'department', 'Dept_ID', 'speciality'],
           include: [
             {
               model: User,
@@ -260,6 +349,7 @@ export const getSessions = async (req, res) => {
               attributes: ['id', 'name'],
             },
           ],
+          required: false,
         },
         {
           model: MedicalStaff,
@@ -270,11 +360,12 @@ export const getSessions = async (req, res) => {
               attributes: ['id', 'name'],
             },
           ],
+          required: false,
         },
         {
           model: User,
           as: 'PatientUser',
-          attributes: ['id', 'name'],
+          attributes: ['id', 'name', 'email', 'phone'],
           required: false,
         },
       ],

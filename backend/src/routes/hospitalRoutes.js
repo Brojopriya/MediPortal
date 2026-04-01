@@ -4,6 +4,7 @@ import {
   createDiagnosticTest,
   createHospital,
   createWard,
+  deleteDiagnosticTest,
   deleteHospital,
   getHospitalCatalog,
   getHospitals,
@@ -19,6 +20,7 @@ router.post('/', protect, authorizeRoles('ADMIN'), createHospital);
 router.post('/departments', protect, authorizeRoles('ADMIN'), createDepartment);
 router.post('/wards', protect, authorizeRoles('ADMIN'), createWard);
 router.post('/tests', protect, authorizeRoles('ADMIN'), createDiagnosticTest);
+router.delete('/tests/:id', protect, authorizeRoles('ADMIN'), deleteDiagnosticTest);
 router.put('/:id', protect, authorizeRoles('ADMIN'), updateHospital);
 router.delete('/:id', protect, authorizeRoles('ADMIN'), deleteHospital);
 

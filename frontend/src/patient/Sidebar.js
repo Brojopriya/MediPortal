@@ -67,6 +67,13 @@ const Sidebar = () => {
           <i className="icon">💳</i>
           <span>Billing</span>
         </Link>
+        <Link
+          to="/PatientDashboard/feedback"
+          className={isActive("/feedback") ? "nav-item active" : "nav-item"}
+        >
+          <i className="icon">📝</i>
+          <span>Feedback</span>
+        </Link>
       </nav>
       <div className="sidebar-footer">
         <Link to="/" className="nav-item">

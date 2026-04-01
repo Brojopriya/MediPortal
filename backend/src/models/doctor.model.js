@@ -1,7 +1,7 @@
 // models/doctor.model.js
 export default (sequelize, DataTypes) => {
     return sequelize.define('Doctor', {
-      id:              { type: DataTypes.INTEGER, primaryKey: true, field: 'D_ID' },
+      id:              { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, field: 'D_ID' },
       speciality:      { type: DataTypes.STRING, field: 'Speciality',        allowNull: true },
       department:      { type: DataTypes.STRING, field: 'Department',        allowNull: true },
       timeSchedule:    { type: DataTypes.STRING, field: 'Time_Schedule',     allowNull: true },

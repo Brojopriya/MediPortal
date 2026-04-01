@@ -192,6 +192,13 @@ const DoctorPublicProfile = () => {
 
   const availableDaysText = String(doctor?.availableDays || "").trim();
   const availableTimeText = String(doctor?.availableTime || doctor?.timeSchedule || "").trim();
+  const doctorName = doctor?.name || "Doctor";
+  const doctorSpecialty = doctor?.specialty || doctor?.speciality || "General Medicine";
+  const doctorDepartment = doctor?.department || "General";
+  const doctorQualification = doctor?.qualification || "Available on request";
+  const doctorExperience = doctor?.experience || "Available on request";
+  const doctorConsultationFee = doctor?.consultationFee ? `BDT ${doctor.consultationFee}` : "On request";
+  const doctorBio = doctor?.bio || "A dedicated specialist focused on patient-first care and thoughtful consultations.";
 
   const allowedDays = useMemo(() => {
     const parsed = parseAvailableDays(availableDaysText);
@@ -277,8 +284,9 @@ const DoctorPublicProfile = () => {
   if (isLoading) {
     return (
       <div className="home-container">
-        <section className="section doctor-public-section">
+        <section className="section doctor-public-section doctor-public-page-shell">
           <h2>Loading doctor profile...</h2>
+          <p className="muted">Preparing a premium consultation view for you.</p>
         </section>
       </div>
     );
@@ -287,7 +295,7 @@ const DoctorPublicProfile = () => {
   if (!doctor) {
     return (
       <div className="home-container">
-        <section className="section doctor-public-section">
+        <section className="section doctor-public-section doctor-public-page-shell">
           <h2>Doctor not found</h2>
           <p className="muted">The selected doctor profile is unavailable.</p>
           <button className="primary" onClick={() => navigate("/")}>Back to Home</button>
@@ -298,39 +306,77 @@ const DoctorPublicProfile = () => {
 
   return (
     <div className="home-container">
-      <section className="section doctor-public-section">
+      <section className="section doctor-public-section doctor-public-page-shell">
         <div className="doctor-public-header">
-          <h2>Doctor Profile</h2>
+          <div>
+            <h2>Doctor Profile</h2>
+          </div>
           <Link to="/" className="muted">Back to Home</Link>
         </div>
 
-        <article className="doctor-card doctor-public-card">
-          {doctor.profileUrl ? (
-            <img src={doctor.profileUrl} alt={doctor.name || "Doctor"} className="doctor-photo" />
-          ) : (
-            <div className="doctor-avatar-fallback">
-              {(doctor.name || "Doctor")
-                .split(" ")
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join("")}
+        <div className="doctor-public-hero">
+          <article className="doctor-public-intro">
+            <div className="doctor-public-badge-row">
+              <span className="doctor-public-badge">Verified specialist</span>
+              <span className="doctor-public-badge ghost">Private consultation</span>
             </div>
-          )}
-          <div className="doctor-info">
-            <h4>{doctor.name || "Doctor"}</h4>
-            <p className="muted">Specialty: {doctor.specialty || doctor.speciality || "General"}</p>
-            <p className="muted">Department: {doctor.department || "-"}</p>
-            <p className="muted">Schedule: {doctor.timeSchedule || doctor.availableTime || "-"}</p>
-            <p className="muted">Qualification: {doctor.qualification || "-"}</p>
-            <p className="muted">Experience: {doctor.experience || "-"}</p>
-            <p className="muted">Consultation Fee: {doctor.consultationFee ? `BDT ${doctor.consultationFee}` : "-"}</p>
-            <p className="muted">Bio: {doctor.bio || "-"}</p>
-          </div>
-        </article>
 
-        <div className="doctor-public-booking">
-          <h3>Book This Doctor</h3>
-          <p className="muted">Choose a date and time to schedule your consultation from this page.</p>
+            <h3>{doctorName}</h3>
+            <p className="doctor-public-specialty">{doctorSpecialty}</p>
+            <p className="doctor-public-summary">
+              {doctorBio}
+            </p>
+
+            <div className="doctor-public-chips">
+              <span>Qualification: {doctorQualification}</span>
+              <span>Experience: {doctorExperience}</span>
+            </div>
+
+            <div className="doctor-public-highlights">
+              <div>
+                <strong>{doctorDepartment}</strong>
+                <span>Department</span>
+              </div>
+              <div>
+                <strong>{doctorConsultationFee}</strong>
+                <span>Visit fee</span>
+              </div>
+              <div>
+                <strong className="doctor-public-working-days">{availableDaysText || "Daily"}</strong>
+                <span>Working days</span>
+              </div>
+            </div>
+          </article>
+
+          <article className="doctor-public-portrait">
+            {doctor.profileUrl ? (
+              <img src={doctor.profileUrl} alt={doctorName} className="doctor-public-photo" />
+            ) : (
+              <div className="doctor-public-avatar-fallback">
+                {doctorName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")}
+              </div>
+            )}
+            <div className="doctor-public-portrait-meta">
+              <span>Specialty</span>
+              <strong>{doctorSpecialty}</strong>
+              <span>Qualification</span>
+              <strong>{doctorQualification}</strong>
+            </div>
+          </article>
+        </div>
+
+        <div className="doctor-public-booking doctor-public-booking-panel">
+          <div className="doctor-public-booking-header">
+            <div>
+              <h3>Book This Doctor</h3>
+              <p className="muted">Choose a date and time to schedule your consultation from this page.</p>
+            </div>
+            <span className="doctor-public-booking-pill">Fast booking</span>
+          </div>
 
           {notice.text ? (
             <div className={`doctor-public-notice ${notice.type === "error" ? "error" : "success"}`}>
@@ -383,7 +429,7 @@ const DoctorPublicProfile = () => {
             <button
               className="primary"
               type="submit"
-              disabled={isBooking || !canBook || (form.bookingType !== "ONLINE" && (!dateOptions.length || !timeOptions.length))}
+              disabled={isBooking || (form.bookingType !== "ONLINE" && (!dateOptions.length || !timeOptions.length))}
             >
               {isBooking ? "Booking..." : form.bookingType === "ONLINE" ? "Go to Telemedicine" : "Book Appointment"}
             </button>

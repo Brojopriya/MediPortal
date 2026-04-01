@@ -6,7 +6,7 @@ import bodyParser from 'body-parser';
 import bcrypt from 'bcryptjs';
 
 // Sequelize
-import { sequelize, User, Hospital } from './src/models/index.js';
+import { sequelize, User, Hospital, Diagnosis, SiteSetting, Nurse, Feedback } from './src/models/index.js';
 
 // Routes
 import userRoutes from './src/routes/userRoutes.js';
@@ -19,6 +19,7 @@ import reportRoutes from './src/routes/reportRoutes.js';
 import telemedicineRoutes from './src/routes/telemedicineRoutes.js';
 import statsRoutes from './src/routes/statsRoutes.js';
 import hospitalRoutes from './src/routes/hospitalRoutes.js';
+import feedbackRoutes from './src/routes/feedbackRoutes.js';
 import { forgotPassword } from './src/controllers/userController.js';
 
 // Middleware
@@ -74,6 +75,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/telemedicine', telemedicineRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/hospitals', hospitalRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.post('/api/forgot-password', forgotPassword);
 
 // ✅ 404 Middleware (catch-all for unknown routes)
@@ -165,6 +167,26 @@ const ensureDefaultAdmin = async () => {
   console.log('✅ Default admin account ensured');
 };
 
+const ensureDiagnosisTable = async () => {
+  await Diagnosis.sync();
+  console.log('✅ Diagnosis table ensured');
+};
+
+const ensureSiteSettingsTable = async () => {
+  await SiteSetting.sync();
+  console.log('✅ SiteSettings table ensured');
+};
+
+const ensureNurseTable = async () => {
+  await Nurse.sync();
+  console.log('✅ Nurse table ensured');
+};
+
+const ensureFeedbackTable = async () => {
+  await Feedback.sync();
+  console.log('✅ Feedback table ensured');
+};
+
 const startServer = async () => {
   try {
     validateDatabaseEnv();
@@ -177,6 +199,10 @@ const startServer = async () => {
       console.log(`✅ Database schema sync completed (alter=${shouldAlterSchema})`);
     } else {
       console.log('ℹ️ Skipping sequelize.sync() in production mode (set DB_SYNC=true to enable)');
+      await ensureDiagnosisTable();
+      await ensureSiteSettingsTable();
+      await ensureNurseTable();
+      await ensureFeedbackTable();
     }
 
     await ensureDefaultHospital();

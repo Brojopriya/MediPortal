@@ -1,7 +1,10 @@
+const isBrowser = typeof window !== "undefined";
+const host = isBrowser ? String(window.location.hostname || "") : "";
+const isLocalRuntime = host === "localhost" || host === "127.0.0.1";
+
 const CANDIDATE_API_BASES = [
+  ...(isLocalRuntime ? ["http://localhost:5001/api", "http://localhost:5000/api"] : []),
   process.env.REACT_APP_API_BASE,
-  "http://localhost:5001/api",
-  "http://localhost:5000/api",
   "/api",
 ].filter(Boolean);
 
@@ -50,6 +53,7 @@ const request = async (endpoint, options = {}) => {
 
   for (const base of API_BASES) {
     try {
+      const url = `${base}${endpoint}`;
       const res = await fetch(`${base}${endpoint}`, {
         ...options,
         headers,
@@ -57,14 +61,36 @@ const request = async (endpoint, options = {}) => {
 
       const json = await parseResponseBody(res);
 
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          handleUnauthorized();
+      // Netlify SPA fallback can return HTML with 200 status for unknown /api routes.
+      // Treat non-JSON success responses as failed API responses and continue fallback.
+      if (res.ok && !json) {
+        if (base !== API_BASES[API_BASES.length - 1]) {
+          continue;
         }
 
         return {
           success: false,
-          message: json?.message || `Request failed with status ${res.status}`,
+          message: `API returned non-JSON response from ${url}. Check Netlify redirects and REACT_APP_API_BASE.`,
+          data: null,
+        };
+      }
+
+      if (!res.ok) {
+        // 403 can be a normal role restriction; auto-logout only on explicit unauthenticated 401.
+        if (res.status === 401) {
+          handleUnauthorized();
+        }
+
+        // In local development, fallback hosts can point to unrelated local services.
+        // If a response has no JSON body, try the next base before surfacing an error.
+        const likelyWrongService = !json && [400, 401, 403, 404, 405].includes(res.status);
+        if (likelyWrongService && base !== API_BASES[API_BASES.length - 1]) {
+          continue;
+        }
+
+        return {
+          success: false,
+          message: json?.message || `Request failed with status ${res.status} at ${url}`,
           data: null,
         };
       }
@@ -133,6 +159,13 @@ export const bookAppointment = async (data) =>
     body: JSON.stringify(data),
   });
 export const fetchReports = async () => request("/reports");
+export const fetchPatientFeedback = async () => request("/feedback/my");
+export const fetchPublicFeedback = async () => request("/feedback/public");
+export const submitPatientFeedback = async (data) =>
+  request("/feedback", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 export const updateReport = async (id, data) =>
   request(`/reports/${id}`, {
     method: "PUT",
@@ -255,6 +288,11 @@ export const createDiagnosticTest = async (data) =>
   request("/hospitals/tests", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+
+export const deleteDiagnosticTest = async (id) =>
+  request(`/hospitals/tests/${id}`, {
+    method: "DELETE",
   });
 
 export const updateHospital = async (id, data) =>

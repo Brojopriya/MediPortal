@@ -4,6 +4,7 @@ import {
   createDepartment,
   createDiagnosticTest,
   createAdminUser,
+  deleteDiagnosticTest,
   createWard,
   fetchAdminAnalytics,
   deleteAdminUser,
@@ -83,12 +84,15 @@ const AdminDashboard = () => {
   });
   const [savingContent, setSavingContent] = useState(false);
   const [analytics, setAnalytics] = useState(EMPTY_ANALYTICS);
+  const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
   const [hospitals, setHospitals] = useState([]);
+  const [catalogHospitals, setCatalogHospitals] = useState([]);
   const [hospitalTests, setHospitalTests] = useState([]);
   const [hospitalQuery, setHospitalQuery] = useState("");
   const [departmentDraft, setDepartmentDraft] = useState(EMPTY_DEPARTMENT_DRAFT);
   const [wardDraft, setWardDraft] = useState(EMPTY_WARD_DRAFT);
   const [testDraft, setTestDraft] = useState(EMPTY_TEST_DRAFT);
+  const [deletingTestId, setDeletingTestId] = useState(null);
   const [notice, setNotice] = useState({ type: "", text: "" });
 
   const setErrorNotice = (text) => setNotice({ type: "error", text });
@@ -102,11 +106,17 @@ const AdminDashboard = () => {
 
   const loadUsers = async () => {
     const result = await fetchAdminUsers();
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load admin users");
+    }
     setUsers(Array.isArray(result?.data) ? result.data : []);
   };
 
   const loadSummary = async () => {
     const result = await fetchAdminSummary();
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load admin summary");
+    }
     setSummary(result?.data || {
       totalUsers: 0,
       pendingApprovals: 0,
@@ -124,23 +134,37 @@ const AdminDashboard = () => {
 
   const loadAnalytics = async () => {
     const result = await fetchAdminAnalytics();
+    if (!result?.success) {
+      setAnalytics(EMPTY_ANALYTICS);
+      setAnalyticsLoaded(false);
+      throw new Error(result?.message || "Failed to load admin analytics");
+    }
+
     setAnalytics(result?.data || EMPTY_ANALYTICS);
+    setAnalyticsLoaded(true);
   };
 
   const loadHospitals = async () => {
     const result = await fetchHospitals();
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load hospitals");
+    }
     setHospitals(Array.isArray(result?.data) ? result.data : []);
   };
 
   const loadHospitalCatalog = async () => {
     const result = await fetchHospitalCatalog();
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load hospital catalog");
+    }
+    setCatalogHospitals(Array.isArray(result?.data?.hospitals) ? result.data.hospitals : []);
     setHospitalTests(Array.isArray(result?.data?.tests) ? result.data.tests : []);
   };
 
   const loadAll = async () => {
     clearNotice();
     setLoading(true);
-    const results = await Promise.allSettled([
+    await Promise.allSettled([
       loadPending(),
       loadUsers(),
       loadSummary(),
@@ -149,11 +173,6 @@ const AdminDashboard = () => {
       loadHospitals(),
       loadHospitalCatalog(),
     ]);
-
-    const hasRejected = results.some((result) => result.status === "rejected");
-    if (hasRejected) {
-      setErrorNotice("Some admin data could not be loaded. Please refresh and try again.");
-    }
 
     setLoading(false);
   };
@@ -173,22 +192,30 @@ const AdminDashboard = () => {
   }, [users, query, roleFilter, statusFilter]);
 
   const userRoleData = useMemo(() => {
-    const roleCounts = users.reduce(
-      (acc, user) => {
-        const status = String(user?.approvalStatus || "").toUpperCase();
-        if (status !== "APPROVED") {
-          return acc;
-        }
+    const hasUsers = users.length > 0;
+    const roleCounts = hasUsers
+      ? users.reduce(
+          (acc, user) => {
+            const status = String(user?.approvalStatus || "").toUpperCase();
+            if (status !== "APPROVED") {
+              return acc;
+            }
 
-        const role = String(user?.role || "").toUpperCase();
-        if (role === "DOCTOR") acc.doctors += 1;
-        if (role === "PATIENT") acc.patients += 1;
-        if (role === "NURSE") acc.nurses += 1;
-        if (role === "STAFF") acc.staff += 1;
-        return acc;
-      },
-      { doctors: 0, patients: 0, nurses: 0, staff: 0 }
-    );
+            const role = String(user?.role || "").toUpperCase();
+            if (role === "DOCTOR") acc.doctors += 1;
+            if (role === "PATIENT") acc.patients += 1;
+            if (role === "NURSE") acc.nurses += 1;
+            if (role === "STAFF") acc.staff += 1;
+            return acc;
+          },
+          { doctors: 0, patients: 0, nurses: 0, staff: 0 }
+        )
+      : {
+          doctors: Number(summary.byRole?.doctors) || 0,
+          patients: Number(summary.byRole?.patients) || 0,
+          nurses: Number(summary.byRole?.nurses) || 0,
+          staff: Number(summary.byRole?.staff) || 0,
+        };
 
     return [
       { label: "Doctors", value: roleCounts.doctors, color: "#0ea5e9" },
@@ -196,7 +223,7 @@ const AdminDashboard = () => {
       { label: "Nurses", value: roleCounts.nurses, color: "#f59e0b" },
       { label: "Staff", value: roleCounts.staff, color: "#ef4444" },
     ];
-  }, [users]);
+  }, [summary.byRole?.doctors, summary.byRole?.nurses, summary.byRole?.patients, summary.byRole?.staff, users]);
 
   const userRoleTotal = useMemo(
     () => userRoleData.reduce((sum, item) => sum + item.value, 0),
@@ -219,24 +246,75 @@ const AdminDashboard = () => {
     return `conic-gradient(${segments.join(", ")})`;
   }, [userRoleData, userRoleTotal]);
 
-  const facilityBarData = useMemo(() => {
-    const backendBars = analytics.charts?.facilityBar;
-    if (Array.isArray(backendBars) && backendBars.length > 0) {
-      return backendBars;
+  const userSnapshot = useMemo(() => {
+    const professionalUsers = users.filter((user) => {
+      const role = String(user?.role || "").toUpperCase();
+      return role === "DOCTOR" || role === "NURSE" || role === "STAFF";
+    });
+
+    const approvedProfessionals = professionalUsers.filter(
+      (user) => String(user?.approvalStatus || "").toUpperCase() === "APPROVED"
+    ).length;
+    const pendingProfessionals = professionalUsers.filter(
+      (user) => String(user?.approvalStatus || "").toUpperCase() === "PENDING"
+    ).length;
+
+    if (analyticsLoaded) {
+      return {
+        total: Number(analytics.users?.total) || 0,
+        approvedProfessionals: Number(analytics.users?.approvedProfessionals) || 0,
+        pendingProfessionals: Number(analytics.users?.pendingProfessionals) || 0,
+      };
     }
 
+    return {
+      total: Number(summary.totalUsers) || users.length,
+      approvedProfessionals,
+      pendingProfessionals,
+    };
+  }, [analyticsLoaded, analytics.users?.approvedProfessionals, analytics.users?.pendingProfessionals, analytics.users?.total, summary.totalUsers, users]);
+
+  const facilityBarData = useMemo(() => {
+    if (analyticsLoaded) {
+      const backendBars = analytics.charts?.facilityBar;
+      if (Array.isArray(backendBars) && backendBars.length > 0) {
+        return backendBars;
+      }
+
+      return [
+        { label: "Hospitals", value: analytics.facilities?.hospitalsTotal || 0 },
+        { label: "Departments", value: analytics.facilities?.departmentsTotal || 0 },
+        { label: "Wards", value: analytics.facilities?.wardsTotal || 0 },
+        { label: "Emergency Units", value: analytics.facilities?.emergencyUnitsTotal || 0 },
+      ];
+    }
+
+    const sourceHospitals = hospitals.length > 0 ? hospitals : catalogHospitals;
+    const hospitalTotals = sourceHospitals.reduce(
+      (acc, hospital) => {
+        acc.hospitals += 1;
+        acc.departments += Number(hospital?.departmentCount) || 0;
+        acc.wards += Number(hospital?.wardCount) || 0;
+        return acc;
+      },
+      { hospitals: 0, departments: 0, wards: 0 }
+    );
+
     return [
-      { label: "Hospitals", value: analytics.facilities?.hospitalsTotal || 0 },
-      { label: "Departments", value: analytics.facilities?.departmentsTotal || 0 },
-      { label: "Wards", value: analytics.facilities?.wardsTotal || 0 },
-      { label: "Emergency Units", value: analytics.facilities?.emergencyUnitsTotal || 0 },
+      { label: "Hospitals", value: hospitalTotals.hospitals },
+      { label: "Departments", value: hospitalTotals.departments },
+      { label: "Wards", value: hospitalTotals.wards },
+      { label: "Emergency Units", value: 0 },
     ];
   }, [
+    analyticsLoaded,
     analytics.charts?.facilityBar,
     analytics.facilities?.hospitalsTotal,
     analytics.facilities?.departmentsTotal,
     analytics.facilities?.wardsTotal,
     analytics.facilities?.emergencyUnitsTotal,
+    hospitals,
+    catalogHospitals,
   ]);
 
   const facilityBarMax = useMemo(
@@ -475,6 +553,29 @@ const AdminDashboard = () => {
     setSuccessNotice("Diagnostic test created successfully.");
   };
 
+  const handleDeleteTest = async (testId, testName) => {
+    clearNotice();
+
+    const shouldDelete = window.confirm(`Delete diagnostic test "${testName}"?`);
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingTestId(testId);
+    try {
+      const result = await deleteDiagnosticTest(testId);
+      if (!result?.success) {
+        setErrorNotice(result?.message || "Failed to delete diagnostic test");
+        return;
+      }
+
+      await refreshAnalyticsAndHospitals();
+      setSuccessNotice("Diagnostic test deleted successfully.");
+    } finally {
+      setDeletingTestId(null);
+    }
+  };
+
   return (
     <div className="admin-page">
       <div className="admin-wrap">
@@ -695,6 +796,9 @@ const AdminDashboard = () => {
             <div className="admin-analytics-chart-grid">
               <div className="admin-panel">
                 <h3 className="admin-section-title">Approved Users By Role</h3>
+                {userRoleTotal === 0 ? (
+                  <p className="admin-mini-note">No approved role data available yet.</p>
+                ) : null}
                 <div className="admin-pie-layout">
                   <div className="admin-pie-chart" style={{ background: userRolePieBackground }}>
                     <div className="admin-pie-center">
@@ -718,6 +822,9 @@ const AdminDashboard = () => {
 
               <div className="admin-panel">
                 <h3 className="admin-section-title">Facility Capacity</h3>
+                {facilityBarData.every((item) => Number(item.value) === 0) ? (
+                  <p className="admin-mini-note">No facility data available yet.</p>
+                ) : null}
                 <div className="admin-bar-list">
                   {facilityBarData.map((item) => (
                     <div key={item.label} className="admin-bar-row">
@@ -752,9 +859,9 @@ const AdminDashboard = () => {
             <div className="admin-panel">
               <h3 className="admin-section-title">User & Approval Snapshot</h3>
               <div className="admin-role-list">
-                <div className="admin-role-item"><span className="admin-chip">Total Tracked Users</span><strong>{analytics.users?.total || 0}</strong></div>
-                <div className="admin-role-item"><span className="admin-chip approved">Approved Professionals</span><strong>{analytics.users?.approvedProfessionals || 0}</strong></div>
-                <div className="admin-role-item"><span className="admin-chip pending">Pending Professionals</span><strong>{analytics.users?.pendingProfessionals || 0}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip">Total Tracked Users</span><strong>{userSnapshot.total}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip approved">Approved Professionals</span><strong>{userSnapshot.approvedProfessionals}</strong></div>
+                <div className="admin-role-item"><span className="admin-chip pending">Pending Professionals</span><strong>{userSnapshot.pendingProfessionals}</strong></div>
               </div>
             </div>
           </div>
@@ -924,13 +1031,24 @@ const AdminDashboard = () => {
                   <button className="admin-btn primary admin-btn-block" type="submit">Create Test</button>
                 </form>
 
-                <h4 className="admin-subheading">Available Tests</h4>
+                <h4 className="admin-subheading">Available Tests (Remove from here)</h4>
+                <p className="admin-mini-note">Use the Remove Test button next to a test name.</p>
                 {hospitalTests.length === 0 ? (
                   <p className="admin-mini-note">No diagnostic tests configured yet.</p>
                 ) : (
                   <ul className="admin-inline-list">
                     {hospitalTests.map((test) => (
-                      <li key={test.id}>{test.name} - BDT {Number(test.price || 0).toFixed(2)}</li>
+                      <li key={test.id} className="admin-test-item">
+                        <span className="admin-test-meta">{test.name} - BDT {Number(test.price || 0).toFixed(2)}</span>
+                        <button
+                          className="admin-btn danger admin-test-remove-btn"
+                          type="button"
+                          disabled={deletingTestId === test.id}
+                          onClick={() => handleDeleteTest(test.id, test.name)}
+                        >
+                          {deletingTestId === test.id ? "Removing..." : "Remove Test"}
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 )}

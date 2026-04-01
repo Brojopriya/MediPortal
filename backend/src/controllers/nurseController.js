@@ -413,6 +413,8 @@ export const getMyNurseProfile = async (req, res) => {
 // Update logged-in nurse's profile
 export const updateMyNurseProfile = async (req, res) => {
   try {
+    console.log('📝 updateMyNurseProfile called for user:', req.user?.id, 'with data:', Object.keys(req.body));
+    
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json(formatResponse(false, 'User not found'));
 
@@ -439,35 +441,58 @@ export const updateMyNurseProfile = async (req, res) => {
     const nurseFields = ['dateOfBirth','employeeId','department','shift','specialization','licenseNumber','joiningDate','experience','qualifications','post'];
     const nurseUpdates = {};
     for (const f of nurseFields) {
-      if (req.body[f] !== undefined) nurseUpdates[f] = req.body[f];
+      if (req.body[f] !== undefined) {
+        const raw = req.body[f];
+        // DATEONLY columns reject empty string values in strict SQL mode.
+        if ((f === 'dateOfBirth' || f === 'joiningDate') && String(raw || '').trim() === '') {
+          nurseUpdates[f] = null;
+        } else {
+          nurseUpdates[f] = raw;
+        }
+      }
     }
-    if (nurseUpdates.shift) nurseUpdates.timeSchedule = nurseUpdates.shift;
+    if (Object.prototype.hasOwnProperty.call(nurseUpdates, 'shift')) {
+      nurseUpdates.timeSchedule = nurseUpdates.shift || null;
+    }
+    
+    if (req.body.dateOfBirth !== undefined && String(req.body.dateOfBirth || '').trim() === '') {
+      nurseUpdates.dateOfBirth = null;
+    }
 
+    console.log('📝 User updates:', Object.keys(userUpdates).length > 0 ? Object.keys(userUpdates) : 'none');
+    console.log('📝 Nurse updates:', Object.keys(nurseUpdates).length > 0 ? Object.keys(nurseUpdates) : 'none');
+    
     await Promise.all([
       Object.keys(userUpdates).length ? user.update(userUpdates) : Promise.resolve(),
       Object.keys(nurseUpdates).length ? nurse.update(nurseUpdates) : Promise.resolve(),
     ]);
 
+    // Refresh from database to get latest values
+    const updatedUser = await User.findByPk(user.id);
+    const updatedNurse = await Nurse.findByPk(nurse.id);
+
+    console.log('✅ Nurse profile updated successfully');
     return res.json(formatResponse(true, 'Nurse profile updated', {
-      id:             user.id,
-      name:           userUpdates.name        ?? user.name,
-      email:          userUpdates.email       ?? user.email,
-      phone:          userUpdates.phone       ?? user.phone,
-      address:        userUpdates.address     ?? user.address,
-      gender:         userUpdates.gender      ?? user.gender,
-      profileUrl:     userUpdates.profileUrl  ?? user.profileUrl,
-      dateOfBirth:    nurseUpdates.dateOfBirth    ?? nurse.dateOfBirth    ?? '',
-      employeeId:     nurseUpdates.employeeId     ?? nurse.employeeId     ?? '',
-      department:     nurseUpdates.department     ?? nurse.department     ?? '',
-      shift:          nurseUpdates.shift          ?? nurse.shift          ?? '',
-      specialization: nurseUpdates.specialization ?? nurse.specialization ?? '',
-      licenseNumber:  nurseUpdates.licenseNumber  ?? nurse.licenseNumber  ?? '',
-      joiningDate:    nurseUpdates.joiningDate     ?? nurse.joiningDate    ?? '',
-      experience:     nurseUpdates.experience     ?? nurse.experience     ?? '',
-      qualifications: nurseUpdates.qualifications ?? nurse.qualifications ?? '',
-      post:           nurseUpdates.post           ?? nurse.post           ?? '',
+      id:             updatedUser.id,
+      name:           updatedUser.name,
+      email:          updatedUser.email,
+      phone:          updatedUser.phone,
+      address:        updatedUser.address,
+      gender:         updatedUser.gender,
+      profileUrl:     updatedUser.profileUrl,
+      dateOfBirth:    updatedNurse?.dateOfBirth    ?? '',
+      employeeId:     updatedNurse?.employeeId     ?? '',
+      department:     updatedNurse?.department     ?? '',
+      shift:          updatedNurse?.shift          ?? updatedNurse?.timeSchedule ?? '',
+      specialization: updatedNurse?.specialization ?? '',
+      licenseNumber:  updatedNurse?.licenseNumber  ?? '',
+      joiningDate:    updatedNurse?.joiningDate     ?? '',
+      experience:     updatedNurse?.experience     ?? '',
+      qualifications: updatedNurse?.qualifications ?? '',
+      post:           updatedNurse?.post           ?? '',
     }));
   } catch (err) {
+    console.error('❌ Error in updateMyNurseProfile:', err.message);
     return handleError(res, err);
   }
 };

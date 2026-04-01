@@ -11,6 +11,7 @@ import {
   fetchPatientSummary,
   fetchReports,
   fetchTelemedicineSessions,
+  submitPatientFeedback,
   submitTelemedicineRequest,
 } from "./api";
 
@@ -121,6 +122,10 @@ const DashboardHome = () => {
           <button onClick={() => navigate("/PatientDashboard/billing")} className="action-btn">
             <span className="action-icon">💳</span>
             <span>Billing</span>
+          </button>
+          <button onClick={() => navigate("/PatientDashboard/feedback")} className="action-btn">
+            <span className="action-icon">📝</span>
+            <span>System Feedback</span>
           </button>
         </div>
       </div>
@@ -824,6 +829,103 @@ const Billing = () => (
   </div>
 );
 
+const Feedback = () => {
+  const [submitting, setSubmitting] = React.useState(false);
+  const [notice, setNotice] = React.useState("");
+  const [form, setForm] = React.useState({
+    category: "GENERAL",
+    rating: "5",
+    message: "",
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const trimmedMessage = form.message.trim();
+    if (!trimmedMessage) {
+      setNotice("Please write your feedback before submitting.");
+      return;
+    }
+
+    setSubmitting(true);
+    const payload = {
+      category: form.category,
+      rating: Number(form.rating),
+      message: trimmedMessage,
+    };
+
+    const result = await submitPatientFeedback(payload);
+    if (!result?.success) {
+      setSubmitting(false);
+      setNotice(result?.message || "Unable to submit feedback right now.");
+      return;
+    }
+
+    setForm({ category: "GENERAL", rating: "5", message: "" });
+    setNotice("Thanks for your feedback. It will be shown on the home page.");
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="dashboard-content">
+      <div className="page-header">
+        <h1 className="page-title">System Feedback</h1>
+        <p className="page-subtitle">Share your experience to help us improve the patient portal</p>
+      </div>
+
+      <div className="content-card feedback-card">
+        <h3 className="card-title">Provide Feedback</h3>
+        <form className="form-grid feedback-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Category</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+            >
+              <option value="GENERAL">General</option>
+              <option value="UI_UX">Design & Usability</option>
+              <option value="PERFORMANCE">Performance</option>
+              <option value="BUG">Bug Report</option>
+              <option value="FEATURE">Feature Request</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Rating</label>
+            <select
+              value={form.rating}
+              onChange={(e) => setForm((prev) => ({ ...prev, rating: e.target.value }))}
+            >
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Needs Improvement</option>
+              <option value="1">1 - Poor</option>
+            </select>
+          </div>
+
+          <div className="form-group full-width">
+            <label>Message</label>
+            <textarea
+              placeholder="Tell us what is working well and what needs improvement..."
+              value={form.message}
+              onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="feedback-actions">
+            <button className="btn-primary" type="submit" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit Feedback"}
+            </button>
+          </div>
+        </form>
+
+        {notice ? <p className="feedback-notice">{notice}</p> : null}
+      </div>
+    </div>
+  );
+};
+
 const PatientDashboard = () => {
   return (
     <div className="patient-dashboard">
@@ -839,6 +941,7 @@ const PatientDashboard = () => {
           <Route path="reports" element={<Reports />} />
           <Route path="teleconsultation" element={<Teleconsultation />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="feedback" element={<Feedback />} />
         </Routes>
       </main>
     </div>

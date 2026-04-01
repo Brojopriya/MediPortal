@@ -505,6 +505,29 @@
   gap: 4px;
 }
 
+.admin-test-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-test-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-test-remove-btn {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.admin-test-remove-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .admin-section-title-spaced {
   margin-top: 16px;
 }

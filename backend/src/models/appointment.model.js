@@ -10,13 +10,7 @@ export default (sequelize, DataTypes) => {
     },
     P_ID: { 
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'Patient', // table name
-        key: 'P_ID'       // field name in Patient table
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      allowNull: true
     },
     D_ID: { type: DataTypes.INTEGER, allowNull: true } // Doctor FK can be added similarly
   }, {

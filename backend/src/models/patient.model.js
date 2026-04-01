@@ -1,7 +1,7 @@
 // models/patient.model.js
 export default (sequelize, DataTypes) => {
     return sequelize.define('Patient', {
-      id:               { type: DataTypes.INTEGER, primaryKey: true, field: 'P_ID' },
+      id:               { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, field: 'P_ID' },
       bloodGroup:       { type: DataTypes.STRING, field: 'Blood_Group',       allowNull: true },
       dateOfBirth:      { type: DataTypes.DATEONLY, field: 'Date_Of_Birth',    allowNull: true },
       emergencyContact: { type: DataTypes.STRING, field: 'Emergency_Contact',  allowNull: true },
