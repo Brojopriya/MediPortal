@@ -274,7 +274,7 @@ const Appointments = () => {
 
     setForm((prev) => ({
       ...prev,
-      time: availableTimeSlots.includes(prev.time) ? prev.time : availableTimeSlots[0],
+      time: availableTimeSlots.includes(prev.time) ? prev.time : "",
     }));
   }, [availableTimeSlots]);
 
@@ -284,7 +284,7 @@ const Appointments = () => {
     const result = await bookAppointment({
       D_ID: Number(form.D_ID),
       date: form.date,
-      time: form.time,
+      time: form.time || null,
     });
     setLoading(false);
     if (!result?.success) {
@@ -338,14 +338,13 @@ const Appointments = () => {
               />
             </div>
             <div className="form-field">
-              <label>Time</label>
+              <label>Preferred Time (Optional)</label>
               <select
-                required
                 value={form.time}
                 onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
-                disabled={!form.D_ID || !availableTimeSlots.length}
+                disabled={!form.D_ID}
               >
-                <option value="">{form.D_ID ? "Choose an available time..." : "Select a doctor first"}</option>
+                <option value="">{form.D_ID ? "No preferred time" : "Select a doctor first"}</option>
                 {availableTimeSlots.map((slot) => (
                   <option key={slot} value={slot}>
                     {slot}
@@ -354,7 +353,7 @@ const Appointments = () => {
               </select>
               {form.D_ID && !availableTimeSlots.length ? (
                 <p className="empty-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
-                  This doctor does not have an available time schedule configured yet.
+                  This doctor has not configured slots yet. You can still continue without preferred time.
                 </p>
               ) : null}
             </div>

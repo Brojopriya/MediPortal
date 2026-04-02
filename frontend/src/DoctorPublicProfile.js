@@ -217,7 +217,7 @@ const DoctorPublicProfile = () => {
     setForm((prev) => ({
       ...prev,
       date: prev.date || (dateOptions[0]?.value || ""),
-      time: prev.time || (timeOptions[0] || ""),
+      time: timeOptions.includes(prev.time) ? prev.time : "",
     }));
   }, [dateOptions, timeOptions]);
 
@@ -255,8 +255,8 @@ const DoctorPublicProfile = () => {
       return;
     }
 
-    if (!form.date || !form.time) {
-      setNotice({ type: "error", text: "Please select date and time from doctor availability." });
+    if (!form.date) {
+      setNotice({ type: "error", text: "Please select a preferred appointment date." });
       return;
     }
 
@@ -264,7 +264,7 @@ const DoctorPublicProfile = () => {
     const result = await bookAppointment({
       D_ID: Number(id),
       date: form.date,
-      time: form.time,
+      time: form.time || null,
     });
     setIsBooking(false);
 
@@ -276,7 +276,7 @@ const DoctorPublicProfile = () => {
     setForm((prev) => ({
       ...prev,
       date: dateOptions[0]?.value || "",
-      time: timeOptions[0] || "",
+      time: "",
       bookingType: "PHYSICAL",
     }));
     setNotice({ type: "success", text: "Appointment booked successfully." });
@@ -378,7 +378,7 @@ const DoctorPublicProfile = () => {
           <div className="doctor-public-booking-header">
             <div>
               <h3>Book This Doctor</h3>
-              <p className="muted">Choose a date and time to schedule your consultation from this page.</p>
+              <p className="muted">Choose a date and optional preferred time to schedule your consultation from this page.</p>
             </div>
             <span className="doctor-public-booking-pill">Fast booking</span>
           </div>
@@ -417,14 +417,13 @@ const DoctorPublicProfile = () => {
             </label>
 
             <label>
-              Time
+              Preferred Time (Optional)
               <select
                 value={form.time}
                 onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
-                disabled={!timeOptions.length || form.bookingType === "ONLINE"}
-                required={form.bookingType !== "ONLINE"}
+                disabled={form.bookingType === "ONLINE"}
               >
-                {!timeOptions.length ? <option value="">No available time configured</option> : null}
+                <option value="">No preferred time</option>
                 {timeOptions.map((slot) => (
                   <option key={slot} value={slot}>{slot}</option>
                 ))}
@@ -434,14 +433,14 @@ const DoctorPublicProfile = () => {
             <button
               className="primary"
               type="submit"
-              disabled={isBooking || (form.bookingType !== "ONLINE" && (!dateOptions.length || !timeOptions.length))}
+              disabled={isBooking || (form.bookingType !== "ONLINE" && !dateOptions.length)}
             >
               {isBooking ? "Booking..." : form.bookingType === "ONLINE" ? "Go to Telemedicine" : "Book Appointment"}
             </button>
           </form>
 
-          {form.bookingType !== "ONLINE" && (!dateOptions.length || !timeOptions.length) ? (
-            <p className="muted small">Doctor availability is not configured correctly. Please contact admin.</p>
+          {form.bookingType !== "ONLINE" && !dateOptions.length ? (
+            <p className="muted small">Doctor available days are not configured correctly. Please contact admin.</p>
           ) : null}
 
           {!token ? (

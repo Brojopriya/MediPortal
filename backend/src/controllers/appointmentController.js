@@ -246,8 +246,8 @@ export const deleteAppointment = async (req, res) => {
 export const bookAppointment = async (req, res) => {
   try {
     const { date, time, D_ID } = req.body;
-    if (!date || !time || !D_ID) {
-      return res.status(400).json(formatResponse(false, 'date, time, and D_ID are required'));
+    if (!date || !D_ID) {
+      return res.status(400).json(formatResponse(false, 'date and D_ID are required'));
     }
 
     const doctorId = Number(D_ID);
@@ -298,30 +298,33 @@ export const bookAppointment = async (req, res) => {
       }
     }
 
-    const appointmentMinutes = parseTimeToMinutes(time);
-    if (appointmentMinutes === null) {
-      return res.status(400).json(formatResponse(false, 'Invalid appointment time format'));
-    }
-
-    const scheduleText = String(doctor.availableTime || details.availableTime || doctor.timeSchedule || '').trim();
-    if (scheduleText) {
-      const ranges = parseScheduleRanges(scheduleText);
-      if (!ranges.length) {
-        return res.status(400).json(
-          formatResponse(false, 'Doctor schedule format is invalid. Please ask admin to update available time.')
-        );
+    const normalizedTime = String(time || '').trim();
+    if (normalizedTime) {
+      const appointmentMinutes = parseTimeToMinutes(normalizedTime);
+      if (appointmentMinutes === null) {
+        return res.status(400).json(formatResponse(false, 'Invalid appointment time format'));
       }
 
-      if (!isWithinRanges(appointmentMinutes, ranges)) {
-        return res.status(400).json(
-          formatResponse(false, `Appointment time must be within doctor's available time (${scheduleText})`)
-        );
+      const scheduleText = String(doctor.availableTime || details.availableTime || doctor.timeSchedule || '').trim();
+      if (scheduleText) {
+        const ranges = parseScheduleRanges(scheduleText);
+        if (!ranges.length) {
+          return res.status(400).json(
+            formatResponse(false, 'Doctor schedule format is invalid. Please ask admin to update available time.')
+          );
+        }
+
+        if (!isWithinRanges(appointmentMinutes, ranges)) {
+          return res.status(400).json(
+            formatResponse(false, `Appointment time must be within doctor's available time (${scheduleText})`)
+          );
+        }
       }
     }
 
     const appointment = await Appointment.create({
       date,
-      time,
+      time: normalizedTime || null,
       D_ID: doctorId,
       P_ID: req.user.id,
     });
