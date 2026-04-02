@@ -15,6 +15,112 @@ import {
   submitTelemedicineRequest,
 } from "./api";
 
+const parseTimeToMinutes = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const text = String(value).trim().toLowerCase();
+  const match = text.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) {
+    return null;
+  }
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  const meridiem = (match[3] || "").toLowerCase();
+
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+    if (meridiem === "pm" && hour !== 12) {
+      hour += 12;
+    }
+    if (meridiem === "am" && hour === 12) {
+      hour = 0;
+    }
+  } else if (hour < 0 || hour > 23) {
+    return null;
+  }
+
+  return (hour * 60) + minute;
+};
+
+const formatMinutes = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+};
+
+const parseScheduleRanges = (scheduleText) => {
+  if (!scheduleText) {
+    return [];
+  }
+
+  const normalized = String(scheduleText)
+    .replace(/\bto\b/gi, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const chunks = normalized.split(/[;,]/).map((part) => part.trim()).filter(Boolean);
+  const ranges = [];
+
+  for (const chunk of chunks) {
+    const tokens = chunk.match(/\d{1,2}(?::\d{2})?\s*(?:am|pm)?/gi) || [];
+    if (tokens.length < 2) {
+      continue;
+    }
+
+    const start = parseTimeToMinutes(tokens[0]);
+    const end = parseTimeToMinutes(tokens[1]);
+    if (start === null || end === null || start > end) {
+      continue;
+    }
+
+    ranges.push({ start, end });
+  }
+
+  return ranges;
+};
+
+const buildTimeSlots = (ranges, stepMinutes = 30) => {
+  const slots = [];
+  for (const range of ranges) {
+    for (let current = range.start; current <= range.end; current += stepMinutes) {
+      slots.push(formatMinutes(current));
+    }
+  }
+  return [...new Set(slots)];
+};
+
+const getReportType = (report) => String(report?.reportType || "").trim().toUpperCase();
+
+const isPrescriptionReport = (report) => {
+  const type = getReportType(report);
+  return type.includes("PRESCRIPTION") || type === "RX";
+};
+
+const formatReportTypeLabel = (reportType) => {
+  const normalized = String(reportType || "").trim();
+  if (!normalized) {
+    return "Lab Report";
+  }
+
+  return normalized
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const getStatusClass = (status) => {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "accepted") return "status-accepted";
@@ -27,8 +133,6 @@ const extractSessionTime = (session) => {
   const fromPrescription = String(session?.prescription || "").match(/(\d{1,2}:\d{2})/);
   return fromPrescription ? fromPrescription[1] : "-";
 };
-
-const isPrescriptionReport = (report) => String(report?.reportType || "").toUpperCase() === "PRESCRIPTION";
 
 const DashboardHome = () => {
   const navigate = useNavigate();
@@ -138,6 +242,18 @@ const Appointments = () => {
   const [doctors, setDoctors] = React.useState([]);
   const [form, setForm] = React.useState({ D_ID: "", date: "", time: "" });
   const [loading, setLoading] = React.useState(false);
+  const selectedDoctor = React.useMemo(
+    () => doctors.find((doctor) => String(doctor.id) === String(form.D_ID)),
+    [doctors, form.D_ID]
+  );
+  const selectedDoctorName = selectedDoctor?.name || (form.D_ID ? `Doctor #${form.D_ID}` : "");
+  const selectedDoctorAvailability = String(
+    selectedDoctor?.availableTime || selectedDoctor?.timeSchedule || selectedDoctor?.availableTime || ""
+  ).trim();
+  const availableTimeSlots = React.useMemo(
+    () => buildTimeSlots(parseScheduleRanges(selectedDoctorAvailability)),
+    [selectedDoctorAvailability]
+  );
 
   const loadAppointments = React.useCallback(() => {
     fetchMyAppointments().then((res) => {
@@ -149,6 +265,18 @@ const Appointments = () => {
     loadAppointments();
     fetchDoctors().then((res) => setDoctors(Array.isArray(res?.data) ? res.data : []));
   }, [loadAppointments]);
+
+  React.useEffect(() => {
+    if (!availableTimeSlots.length) {
+      setForm((prev) => ({ ...prev, time: "" }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      time: availableTimeSlots.includes(prev.time) ? prev.time : availableTimeSlots[0],
+    }));
+  }, [availableTimeSlots]);
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -193,6 +321,11 @@ const Appointments = () => {
                   </option>
                 ))}
               </select>
+              {selectedDoctorName ? (
+                <p className="empty-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                  {selectedDoctorName}{selectedDoctorAvailability ? ` · Available time: ${selectedDoctorAvailability}` : ""}
+                </p>
+              ) : null}
             </div>
             <div className="form-field">
               <label>Date</label>
@@ -206,12 +339,24 @@ const Appointments = () => {
             </div>
             <div className="form-field">
               <label>Time</label>
-              <input
-                type="time"
+              <select
                 required
                 value={form.time}
                 onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
-              />
+                disabled={!form.D_ID || !availableTimeSlots.length}
+              >
+                <option value="">{form.D_ID ? "Choose an available time..." : "Select a doctor first"}</option>
+                {availableTimeSlots.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {slot}
+                  </option>
+                ))}
+              </select>
+              {form.D_ID && !availableTimeSlots.length ? (
+                <p className="empty-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                  This doctor does not have an available time schedule configured yet.
+                </p>
+              ) : null}
             </div>
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
@@ -232,7 +377,7 @@ const Appointments = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Doctor ID</th>
+                  <th>Doctor Name</th>
                   <th>Date</th>
                   <th>Time</th>
                   <th>Status</th>
@@ -241,7 +386,7 @@ const Appointments = () => {
               <tbody>
                 {appointments.map((item) => (
                   <tr key={item.id}>
-                    <td><span className="badge">Dr. #{item.D_ID}</span></td>
+                    <td><span className="badge">{item.doctorName || item.doctor?.name || `Dr. #${item.D_ID}`}</span></td>
                     <td>{new Date(item.date).toLocaleDateString()}</td>
                     <td>{item.time}</td>
                     <td>
@@ -337,7 +482,7 @@ const MedicalRecords = () => {
               <tbody>
                 {appointments.map((appointment) => (
                   <tr key={appointment.id}>
-                    <td>{getDoctorName(appointment.D_ID)}</td>
+                    <td>{appointment.doctorName || getDoctorName(appointment.D_ID)}</td>
                     <td>{appointment.date ? new Date(appointment.date).toLocaleDateString() : "-"}</td>
                     <td>{appointment.time || "-"}</td>
                     <td>
@@ -555,7 +700,8 @@ const Reports = () => {
       const res = await fetchReports();
       if (mounted) {
         const allReports = Array.isArray(res?.data) ? res.data : [];
-        setReports(allReports.filter((report) => !isPrescriptionReport(report)));
+        const labReports = allReports.filter((report) => !isPrescriptionReport(report));
+        setReports(labReports.length ? labReports : allReports);
         setLoadingReports(false);
       }
     };
@@ -587,6 +733,7 @@ const Reports = () => {
               <thead>
                 <tr>
                   <th>Report ID</th>
+                  <th>Type</th>
                   <th>Date</th>
                   <th>Status</th>
                 </tr>
@@ -595,6 +742,7 @@ const Reports = () => {
                 {reports.map((report) => (
                   <tr key={report.id}>
                     <td>RPT-{report.id}</td>
+                    <td>{formatReportTypeLabel(report.reportType)}</td>
                     <td>{report.date ? new Date(report.date).toLocaleDateString() : "-"}</td>
                     <td>
                       <span className={`status-badge ${getStatusClass(report.status)}`}>

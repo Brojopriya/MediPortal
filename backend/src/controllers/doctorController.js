@@ -4,6 +4,35 @@ import { Appointment, Department, Doctor, Hospital, Telemedicine, User } from '.
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
+const parseProfessionalDetails = (value) => {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+};
+
+const buildDoctorPayload = (userRow, doctorRow, details = {}) => ({
+  id: userRow.id,
+  name: userRow.name || null,
+  profileUrl: doctorRow?.profileUrl || userRow.profileUrl || null,
+  speciality: doctorRow?.speciality || details.speciality || null,
+  specialty: doctorRow?.speciality || details.speciality || null,
+  department: doctorRow?.department || details.department || null,
+  timeSchedule: doctorRow?.timeSchedule || details.timeSchedule || null,
+  availableDays: doctorRow?.availableDays || details.availableDays || null,
+  availableTime: doctorRow?.availableTime || details.availableTime || doctorRow?.timeSchedule || details.timeSchedule || null,
+  Dept_ID: doctorRow?.Dept_ID || details.deptId || null,
+});
+
 // Create a new doctor
 export const createDoctor = async (req, res) => {
   try {
@@ -36,7 +65,7 @@ export const getAllDoctors = async (req, res) => {
     const doctorRows = doctorIds.length
       ? await Doctor.findAll({
           where: { id: { [Op.in]: doctorIds } },
-          attributes: ['id', 'speciality', 'department', 'timeSchedule', 'Dept_ID', 'profileUrl'],
+          attributes: ['id', 'speciality', 'department', 'timeSchedule', 'availableDays', 'availableTime', 'Dept_ID', 'profileUrl'],
         })
       : [];
 
@@ -45,25 +74,8 @@ export const getAllDoctors = async (req, res) => {
     const payload = doctorUsers.map((user) => {
       const d = user.toJSON();
       const doctor = doctorMap.get(d.id);
-      let details = {};
-      try {
-        details = typeof d.professionalDetails === 'string'
-          ? (d.professionalDetails ? JSON.parse(d.professionalDetails) : {})
-          : (d.professionalDetails || {});
-      } catch {
-        details = {};
-      }
-
-      return {
-        id: d.id,
-        name: d.name || null,
-        profileUrl: doctor?.profileUrl || d.profileUrl || null,
-        speciality: doctor?.speciality || details.speciality || null,
-        specialty: doctor?.speciality || details.speciality || null,
-        department: doctor?.department || details.department || null,
-        timeSchedule: doctor?.timeSchedule || details.timeSchedule || null,
-        Dept_ID: doctor?.Dept_ID || details.deptId || null,
-      };
+      const details = parseProfessionalDetails(d.professionalDetails);
+      return buildDoctorPayload(d, doctor, details);
     });
 
     res.json(formatResponse(true, 'All doctors fetched', payload));
@@ -82,28 +94,14 @@ export const getDoctorById = async (req, res) => {
     if (!user) return res.status(404).json(formatResponse(false, 'Doctor not found'));
 
     const doctor = await Doctor.findByPk(user.id, {
-      attributes: ['id', 'speciality', 'department', 'timeSchedule', 'Dept_ID', 'profileUrl'],
+      attributes: ['id', 'speciality', 'department', 'timeSchedule', 'availableDays', 'availableTime', 'Dept_ID', 'profileUrl'],
     });
 
     const d = user.toJSON();
-    let details = {};
-    try {
-      details = typeof d.professionalDetails === 'string'
-        ? (d.professionalDetails ? JSON.parse(d.professionalDetails) : {})
-        : (d.professionalDetails || {});
-    } catch {
-      details = {};
-    }
+    const details = parseProfessionalDetails(d.professionalDetails);
 
     res.json(formatResponse(true, 'Doctor fetched', {
-      id: d.id,
-      name: d.name || null,
-      profileUrl: doctor?.profileUrl || d.profileUrl || null,
-      speciality: doctor?.speciality || details.speciality || null,
-      specialty: doctor?.speciality || details.speciality || null,
-      department: doctor?.department || details.department || null,
-      timeSchedule: doctor?.timeSchedule || details.timeSchedule || null,
-      Dept_ID: doctor?.Dept_ID || details.deptId || null,
+      ...buildDoctorPayload(d, doctor, details),
       qualification: details.qualification || null,
       experience: details.experience || null,
       consultationFee: details.consultationFee || null,
@@ -183,18 +181,11 @@ export const getMyDoctorProfile = async (req, res) => {
 
     return res.json(
       formatResponse(true, 'Doctor profile fetched', {
-        id: user.id,
-        name: user.name,
+        ...buildDoctorPayload(user.toJSON(), doctor, details),
         email: user.email,
-        profileUrl: doctor?.profileUrl || user.profileUrl,
         phone: user.phone,
         address: user.address,
         gender: user.gender,
-        speciality: doctor?.speciality || details.speciality || '',
-        specialty: doctor?.speciality || details.speciality || '',
-        department: selectedDepartment?.name || doctor?.department || details.department || '',
-        timeSchedule: doctor?.timeSchedule || details.timeSchedule || '',
-        deptId: doctor?.Dept_ID || details.deptId || '',
         hospitalId: selectedDepartment?.H_ID || '',
         hospitalName: selectedDepartment?.Hospital?.name || '',
         dateOfBirth: details.dateOfBirth || '',
@@ -202,8 +193,6 @@ export const getMyDoctorProfile = async (req, res) => {
         experience: details.experience || '',
         licenseNumber: details.licenseNumber || '',
         consultationFee: details.consultationFee || '',
-        availableDays: details.availableDays || '',
-        availableTime: details.availableTime || doctor?.timeSchedule || details.timeSchedule || '',
         bio: details.bio || '',
       })
     );
@@ -256,6 +245,8 @@ export const updateMyDoctorProfile = async (req, res) => {
     const speciality = String(req.body.speciality || req.body.specialty || '').trim();
     const departmentFromInput = String(req.body.department || '').trim();
     const timeSchedule = String(req.body.timeSchedule || req.body.availableTime || '').trim();
+    const availableDays = String(req.body.availableDays || '').trim();
+    const availableTime = String(req.body.availableTime || req.body.timeSchedule || '').trim();
     const deptId = req.body.deptId === '' || req.body.deptId === undefined || req.body.deptId === null
       ? null
       : Number(req.body.deptId);
@@ -281,6 +272,8 @@ export const updateMyDoctorProfile = async (req, res) => {
         speciality: speciality || doctor.speciality,
         department: selectedDepartmentName || doctor.department,
         timeSchedule: timeSchedule || doctor.timeSchedule,
+        availableDays: availableDays || doctor.availableDays,
+        availableTime: availableTime || doctor.availableTime,
         Dept_ID: validDeptId,
         profileUrl: userUpdates.profileUrl !== undefined ? userUpdates.profileUrl : doctor.profileUrl,
       }),
@@ -305,8 +298,8 @@ export const updateMyDoctorProfile = async (req, res) => {
       experience: req.body.experience ?? existingDetails.experience ?? '',
       licenseNumber: req.body.licenseNumber ?? existingDetails.licenseNumber ?? '',
       consultationFee: req.body.consultationFee ?? existingDetails.consultationFee ?? '',
-      availableDays: req.body.availableDays ?? existingDetails.availableDays ?? '',
-      availableTime: req.body.availableTime ?? timeSchedule ?? existingDetails.availableTime ?? '',
+      availableDays: availableDays || existingDetails.availableDays || doctor.availableDays || '',
+      availableTime: availableTime || timeSchedule || existingDetails.availableTime || doctor.availableTime || '',
       bio: req.body.bio ?? existingDetails.bio ?? '',
     };
 

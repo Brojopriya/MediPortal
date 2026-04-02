@@ -38,6 +38,7 @@ const LoginPage = () => {
         alert("Login successful!");
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("user", JSON.stringify(data.data.user));
+        window.dispatchEvent(new Event("auth-changed"));
         // redirect based on role
         const role = data.data.user?.role || 'PATIENT';
         if (role === 'DOCTOR') navigate('/DoctorDashboard');

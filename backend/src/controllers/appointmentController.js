@@ -98,6 +98,42 @@ const DAY_ALIASES = {
   sunday: 0,
 };
 
+const enrichAppointments = async (appointments) => {
+  const doctorIds = [...new Set(appointments.map((appointment) => appointment.D_ID).filter(Boolean))];
+  if (!doctorIds.length) {
+    return appointments.map((appointment) => appointment.toJSON());
+  }
+
+  const [doctorUsers, doctorProfiles] = await Promise.all([
+    User.findAll({
+      where: { id: doctorIds, role: 'DOCTOR' },
+      attributes: ['id', 'name'],
+    }),
+    Doctor.findAll({
+      where: { id: doctorIds },
+      attributes: ['id', 'speciality', 'department', 'timeSchedule', 'availableTime', 'availableDays'],
+    }),
+  ]);
+
+  const doctorUserMap = new Map(doctorUsers.map((user) => [user.id, user]));
+  const doctorProfileMap = new Map(doctorProfiles.map((doctor) => [doctor.id, doctor]));
+
+  return appointments.map((appointment) => {
+    const row = appointment.toJSON();
+    const doctorUser = doctorUserMap.get(row.D_ID);
+    const doctorProfile = doctorProfileMap.get(row.D_ID);
+
+    return {
+      ...row,
+      doctorName: row.doctorName || doctorUser?.name || null,
+      doctorSpecialty: doctorProfile?.speciality || null,
+      doctorDepartment: doctorProfile?.department || null,
+      doctorAvailableTime: doctorProfile?.availableTime || doctorProfile?.timeSchedule || null,
+      doctorAvailableDays: doctorProfile?.availableDays || null,
+    };
+  });
+};
+
 const parseAvailableDays = (daysText) => {
   if (!daysText) {
     return null;
@@ -164,7 +200,7 @@ export const createAppointment = async (req, res) => {
 export const getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.findAll();
-    res.json(formatResponse(true, 'All appointments fetched', appointments));
+    res.json(formatResponse(true, 'All appointments fetched', await enrichAppointments(appointments)));
   } catch (err) {
     handleError(res, err);
   }
@@ -303,7 +339,7 @@ export const getMyAppointments = async (req, res) => {
       where: { P_ID: req.user.id },
       order: [['date', 'DESC'], ['time', 'DESC']],
     });
-    return res.json(formatResponse(true, 'My appointments fetched', appointments));
+    return res.json(formatResponse(true, 'My appointments fetched', await enrichAppointments(appointments)));
   } catch (err) {
     return handleError(res, err);
   }

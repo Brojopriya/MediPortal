@@ -3,14 +3,17 @@
 .nurse-dashboard {
   display: flex;
   min-height: 100vh;
-  background-color: #eef4ff;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(247, 183, 49, 0.14), transparent 32%),
+    radial-gradient(circle at 84% 16%, rgba(69, 183, 209, 0.15), transparent 34%),
+    linear-gradient(180deg, #f8faff 0%, #e8f1ff 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  background: linear-gradient(135deg, #2a72d8 0%, #174a9b 100%);
+  background: linear-gradient(170deg, #1e40af 0%, #2563eb 52%, #45b7d1 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -67,8 +70,8 @@
 .logout-btn {
   width: 100%;
   padding: 12px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
   border-radius: 8px;
   cursor: pointer;
@@ -80,7 +83,7 @@
 }
 
 .logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  filter: brightness(1.07);
 }
 
 .logout-btn .icon {
@@ -109,7 +112,7 @@
 
 .edit-btn {
   padding: 12px 24px;
-  background-color: #1d6fd1;
+  background: linear-gradient(135deg, #2563eb, #45b7d1);
   color: white;
   border: none;
   border-radius: 8px;
@@ -120,9 +123,9 @@
 }
 
 .edit-btn:hover {
-  background-color: #1758aa;
+  filter: brightness(1.05);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(29, 111, 209, 0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 .profile-content {
@@ -225,23 +228,23 @@
 }
 
 .save-btn {
-  background-color: #48bb78;
+  background: linear-gradient(135deg, #108b67, #4ecdc4);
   color: white;
 }
 
 .save-btn:hover {
-  background-color: #38a169;
+  filter: brightness(1.05);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 139, 103, 0.35);
 }
 
 .cancel-btn {
-  background-color: #e2e8f0;
-  color: #4a5568;
+  background: linear-gradient(135deg, #f7b731, #f59e0b);
+  color: #ffffff;
 }
 
 .cancel-btn:hover {
-  background-color: #cbd5e0;
+  filter: brightness(1.06);
 }
 
 /* Shared nurse content pages */
@@ -296,8 +299,8 @@
 }
 
 .nurse-table thead th {
-  background: #edf3ff;
-  color: #1f3160;
+  background: linear-gradient(120deg, #1e40af, #2563eb);
+  color: #ffffff;
   font-weight: 600;
   text-align: left;
   padding: 12px;

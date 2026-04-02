@@ -142,19 +142,44 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('user') || 'null');
-      setCurrentUser(u);
-    } catch (err) {
-      setCurrentUser(null);
-    }
+  const syncCurrentUser = useMemo(() => {
+    return () => {
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || 'null');
+        setCurrentUser(u);
+      } catch (err) {
+        setCurrentUser(null);
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    syncCurrentUser();
+
+    const handleStorageChange = (event) => {
+      if (event.key === 'token' || event.key === 'user' || event.key === null) {
+        syncCurrentUser();
+      }
+    };
+
+    const handleAuthChange = () => {
+      syncCurrentUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-changed', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-changed', handleAuthChange);
+    };
+  }, [syncCurrentUser]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setCurrentUser(null);
+    window.dispatchEvent(new Event('auth-changed'));
     navigate('/');
     window.location.reload();
   };
@@ -185,11 +210,6 @@ const HomePage = () => {
   };
 
   const doctorCountForDisplay = Math.max(stats.doctors || 0, doctors.length || 0);
-  const activeSpecialties = new Set(
-    doctors
-      .map((d) => d.speciality || d.specialty)
-      .filter((value) => typeof value === "string" && value.trim())
-  ).size;
 
   const getDepartmentSymbol = (departmentName = "") => {
     const normalized = departmentName.toLowerCase();
@@ -206,6 +226,14 @@ const HomePage = () => {
     if (normalized.includes("ent") || normalized.includes("ear") || normalized.includes("nose") || normalized.includes("throat")) return "👂";
     if (normalized.includes("oncolog")) return "🎗️";
     return "🏥";
+  };
+
+  const hasDoctorAvailability = (doctor) => {
+    const schedule = String(
+      doctor?.timeSchedule || doctor?.availableTime || doctor?.availability || ""
+    ).trim();
+
+    return Boolean(schedule);
   };
 
   const departmentGroups = useMemo(() => {
@@ -239,6 +267,11 @@ const HomePage = () => {
     return selectedGroup ? selectedGroup[1] : [];
   }, [departmentGroups, selectedDepartment]);
 
+  const selectedDepartmentAvailableDoctors = useMemo(
+    () => selectedDepartmentDoctors.filter(hasDoctorAvailability),
+    [selectedDepartmentDoctors]
+  );
+
   useEffect(() => {
     if (!departmentGroups.length) {
       return;
@@ -250,36 +283,22 @@ const HomePage = () => {
     }
   }, [departmentGroups, selectedDepartment]);
 
-  const liveHighlights = [
+  const carePathway = [
     {
-      label: "Appointments",
-      value: stats.appointments || 0,
-      note: "Total scheduled visits",
+      title: "1. Discover The Right Doctor",
+      description: "Search verified specialists and compare availability before booking.",
     },
     {
-      label: "Patients",
-      value: stats.patients || 0,
-      note: "Registered patient accounts",
+      title: "2. Book And Confirm",
+      description: "Schedule in-person or virtual appointments with secure confirmation.",
     },
     {
-      label: "Verified Doctors",
-      value: doctorCountForDisplay,
-      note: "Profiles visible to patients",
+      title: "3. Receive Connected Care",
+      description: "Doctors, nurses, and staff collaborate in one shared operational flow.",
     },
     {
-      label: "Active Departments",
-      value: stats.departments || 0,
-      note: "Clinical units operating",
-    },
-    {
-      label: "Specialties Available",
-      value: activeSpecialties,
-      note: "From current doctor data",
-    },
-    {
-      label: "Facilities",
-      value: stats.facilities || 0,
-      note: "Care units and support services",
+      title: "4. Continue Follow-up",
+      description: "Track reports, prescriptions, and next steps from your dashboard.",
     },
   ];
 
@@ -388,10 +407,10 @@ const HomePage = () => {
   ];
 
   const hospitalOverviewCards = [
-    { title: String(stats.departments), description: "Clinical Departments" },
-    { title: String(stats.facilities), description: "Care Units & Facilities" },
-    { title: "24/7 Operations", description: "Emergency & Critical Care" },
-    { title: "Compliance Ready", description: "Controlled Access to Health Records" },
+    { title: "Clinical Governance", description: "Standardized care protocols and accountable workflows." },
+    { title: "Interdisciplinary Teams", description: "Doctors, nurses, and staff collaborate across departments." },
+    { title: "24/7 Critical Response", description: "Emergency and urgent care support when every minute matters." },
+    { title: "Secure Health Records", description: "Role-based access with controlled visibility for patient privacy." },
   ];
 
   const serviceCards = [
@@ -448,13 +467,35 @@ const HomePage = () => {
     },
   ];
 
-  const visibleHighlights = liveHighlights;
   const visibleTrustFeatures = trustFeatures;
   const visibleOverviewCards = hospitalOverviewCards;
   const visibleServiceCards = serviceCards;
   const visibleDoctors = expandedSections.doctors ? doctors : doctors.slice(0, 4);
   const visibleTestimonials = testimonials;
   const visiblePatientTools = patientTools;
+
+  const heroQuickStats = [
+    {
+      label: "Verified Doctors",
+      value: doctorCountForDisplay,
+      note: "Active on platform",
+    },
+    {
+      label: "Departments",
+      value: stats.departments || departmentGroups.length,
+      note: "Clinical units connected",
+    },
+    {
+      label: "Appointments",
+      value: stats.appointments || 0,
+      note: "Coordinated through MediPortal",
+    },
+    {
+      label: "Emergency Support",
+      value: "24/7",
+      note: siteContent.emergencyContact || stats.emergencyContact || "Emergency line available",
+    },
+  ];
 
   return (
     <div className="home-container">
@@ -479,8 +520,8 @@ const HomePage = () => {
                 <span className="header-user-greeting">
                   Hi, {String(currentUser.name || "User").split(' ')[0]}
                 </span>
-                <button className="secondary" onClick={handleDashboard}>Dashboard</button>
-                <button className="secondary" onClick={handleLogout}>Logout</button>
+                <button className="secondary dashboard-btn" onClick={handleDashboard}>Dashboard</button>
+                <button className="secondary logout-btn" onClick={handleLogout}>Logout</button>
               </>
             ) : (
               <>
@@ -496,14 +537,24 @@ const HomePage = () => {
       <section className="hero">
         <div className="hero-content">
           <div className="hero-badge-row">
-            <span className="hero-badge">🏥 24/7 Care Network</span>
-            <span className="hero-badge hero-badge-accent">🩺 Fast, Secure, Trusted</span>
+            <span className="hero-badge">Integrated Healthcare Platform</span>
+            <span className="hero-badge hero-badge-accent">Secure Care Coordination</span>
           </div>
           <h1>{siteContent.heroTitle || "Smart Healthcare, Seamless Access"}</h1>
           <p>
             {siteContent.heroSubtitle ||
               "Book trusted doctors, manage records, and consult online from one secure platform."}
           </p>
+
+          <div className="hero-quick-grid" aria-label="Live platform overview">
+            {heroQuickStats.map((item) => (
+              <article className="hero-quick-card" key={item.label}>
+                <p className="hero-quick-label">{item.label}</p>
+                <h4>{item.value}</h4>
+                <p className="hero-quick-note">{item.note}</p>
+              </article>
+            ))}
+          </div>
 
           <div className="hero-departments">
             <div className="hero-departments-head">
@@ -530,7 +581,7 @@ const HomePage = () => {
                         {getDepartmentSymbol(departmentName)}
                       </span>
                       <span className="hero-department-tab-label">{departmentName}</span>
-                      <strong>{departmentDoctors.length || departmentMeta?.wardCount || 0}</strong>
+                      <strong>{departmentDoctors.filter(hasDoctorAvailability).length}</strong>
                     </button>
                   ))}
                 </div>
@@ -540,17 +591,17 @@ const HomePage = () => {
                     <div className="hero-department-panel-head">
                       <div>
                         <h4>{selectedDepartment}</h4>
-                        <p>{selectedDepartmentDoctors.length} available doctors</p>
+                        <p>{selectedDepartmentAvailableDoctors.length} available doctors</p>
                       </div>
                     </div>
 
                     <div className="hero-doctor-grid">
-                      {selectedDepartmentDoctors.length === 0 ? (
+                      {selectedDepartmentAvailableDoctors.length === 0 ? (
                         <div className="hero-empty-doctors">
                           <p>No doctor is assigned to this department yet.</p>
                         </div>
                       ) : (
-                        selectedDepartmentDoctors.map((doctor, index) => {
+                        selectedDepartmentAvailableDoctors.map((doctor, index) => {
                           const doctorId = doctor?.id ?? doctor?.D_ID ?? doctor?.U_ID ?? null;
                           const doctorLabel = doctor?.name || (doctorId ? `Doctor #${doctorId}` : "Doctor");
                           return (
@@ -599,22 +650,21 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="section services reveal-on-scroll">
-        <h2>📈 Live Operations Snapshot</h2>
-        <p className="section-intro">Real-time activity from live backend data.</p>
-        <div className="snapshot-grid">
-          {visibleHighlights.map((item) => (
-            <article key={item.label} className="snapshot-card">
-              <h3>{item.label}</h3>
-              <p className="snapshot-value">{item.value}</p>
-              <p className="snapshot-note">{item.note}</p>
+      <section className="section pathway-section reveal-on-scroll">
+        <h2>Care Journey With MediPortal</h2>
+        <p className="section-intro">A clear, connected process from discovery to follow-up care.</p>
+        <div className="pathway-grid">
+          {carePathway.map((step) => (
+            <article key={step.title} className="pathway-card">
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
             </article>
           ))}
         </div>
       </section>
 
       <section className="section services reveal-on-scroll">
-        <h2>💙 Why Patients Trust MediPortal</h2>
+        <h2>Why Patients Trust MediPortal</h2>
         <p className="section-intro">Trusted care, secure access, and connected workflows.</p>
         <div className="services-grid">
           {visibleTrustFeatures.map((feature) => (
@@ -628,7 +678,7 @@ const HomePage = () => {
 
       <section className="section test-catalog-section reveal-on-scroll">
         <div className="test-catalog-head">
-          <h2>🧪 Diagnostic Tests & Pricing</h2>
+          <h2>Diagnostic Tests & Pricing</h2>
           <p className="section-intro">Updated from the hospital catalog.</p>
         </div>
 
@@ -662,7 +712,7 @@ const HomePage = () => {
       </section>
 
       <section className="section services reveal-on-scroll">
-        <h2>🏥 Hospital Overview</h2>
+        <h2>Hospital Overview</h2>
         <p className="muted">{siteContent.aboutHospital || stats.aboutHospital || "Comprehensive services across outpatient, emergency, and digital care."}</p>
         <div className="services-grid">
           {visibleOverviewCards.map((item) => (
@@ -676,7 +726,7 @@ const HomePage = () => {
 
       {/* Services */}
       <section id="services" className="section services reveal-on-scroll">
-        <h2>🩺 Our Services</h2>
+        <h2>Our Services</h2>
         <p className="section-intro">Core healthcare services in one connected platform.</p>
         <div className="services-grid">
           {visibleServiceCards.map((item) => (
@@ -690,7 +740,7 @@ const HomePage = () => {
 
       {/* Doctors & Locations */}
       <section id="doctors" className="section doctors-section reveal-on-scroll">
-        <h2>👨‍⚕️ Our Doctors</h2>
+        <h2>Our Doctors</h2>
         <p className="section-intro">Browse verified doctors and book in minutes.</p>
         <div className="doctors-grid">
           {visibleDoctors.map((d, index) => {
@@ -750,7 +800,7 @@ const HomePage = () => {
       </section>
 
       <section className="section testimonials-section reveal-on-scroll">
-        <h2>🗣️ Patient Voices, Real Outcomes</h2>
+        <h2>Patient Voices, Real Outcomes</h2>
         <p className="section-intro">Real feedback from patients and families.</p>
         <div className="testimonials-grid">
           {visibleTestimonials.map((item) => (
@@ -774,7 +824,7 @@ const HomePage = () => {
 
       {/* For Patients Section */}
       <section id="for-patients" className="section user-section reveal-on-scroll">
-        <h2>🧑‍🤝‍🧑 For Patients</h2>
+        <h2>For Patients</h2>
         <p className="section-intro">Simple, secure tools from booking to follow-up.</p>
         <div className="user-features-grid">
           {visiblePatientTools.map((item) => (
@@ -791,7 +841,7 @@ const HomePage = () => {
       {/* Contact + Map */}
       <section id="contact" className="section contact-section reveal-on-scroll">
         <div className="contact-left">
-          <h2>📍 Contact & Location</h2>
+          <h2>Contact & Location</h2>
           <p>
             <strong>Address:</strong> {siteContent.contactAddress || "123 Health St., City"}<br />
             <strong>Phone:</strong> <a href={`tel:${siteContent.contactPhone || "+123456789"}`}>{siteContent.contactPhone || "+1 234 567 89"}</a><br />

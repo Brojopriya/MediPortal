@@ -1,5 +1,6 @@
 // src/controllers/medicalstaffController.js
-import { MedicalStaff, User } from '../models/index.js';
+import { Op } from 'sequelize';
+import { Appointment, MedicalStaff, Report, Telemedicine, User } from '../models/index.js';
 import { formatResponse } from '../utils/responseFormatter.js';
 import { handleError } from '../utils/errorHandler.js';
 
@@ -92,6 +93,73 @@ export const updateMyStaffProfile = async (req, res) => {
       qualification:staffUpdates.qualification?? staff.qualification?? '',
       sector:       staffUpdates.sector       ?? staff.sector       ?? '',
     }));
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
+
+export const getStaffDashboardStats = async (req, res) => {
+  try {
+    const staff = await MedicalStaff.findOne({ where: { U_ID: req.user.id } });
+    if (!staff) {
+      return res.status(404).json(formatResponse(false, 'Staff profile not found'));
+    }
+
+    const [
+      totalAppointments,
+      pendingAppointments,
+      ongoingAppointments,
+      upcomingAppointments,
+      completedAppointments,
+      totalReports,
+      pendingLabTests,
+      inProgressLabTests,
+      distributedLabTests,
+      pendingTelemedicineReviews,
+      myReviewedRequests,
+      myApprovedRequests,
+      myRejectedRequests,
+      doctorScheduledRequests,
+    ] = await Promise.all([
+      Appointment.count(),
+      Appointment.count({ where: { status: 'SCHEDULED' } }),
+      Appointment.count({ where: { status: 'ACCEPTED' } }),
+      Appointment.count({
+        where: {
+          status: 'SCHEDULED',
+          date: { [Op.gte]: new Date().toISOString().slice(0, 10) },
+        },
+      }),
+      Appointment.count({ where: { status: 'COMPLETED' } }),
+      Report.count(),
+      Report.count({ where: { status: 'PENDING' } }),
+      Report.count({ where: { status: 'IN_PROGRESS' } }),
+      Report.count({ where: { status: 'DISTRIBUTED' } }),
+      Telemedicine.count({ where: { requestStatus: 'PAYMENT_SUBMITTED' } }),
+      Telemedicine.count({ where: { S_ID: staff.id } }),
+      Telemedicine.count({ where: { S_ID: staff.id, requestStatus: 'STAFF_APPROVED' } }),
+      Telemedicine.count({ where: { S_ID: staff.id, requestStatus: 'STAFF_REJECTED' } }),
+      Telemedicine.count({ where: { S_ID: staff.id, requestStatus: 'DOCTOR_SCHEDULED' } }),
+    ]);
+
+    return res.json(
+      formatResponse(true, 'Staff dashboard stats fetched', {
+        totalAppointments,
+        pendingAppointments,
+        ongoingAppointments,
+        upcomingAppointments,
+        completedAppointments,
+        totalReports,
+        pendingLabTests,
+        inProgressLabTests,
+        distributedLabTests,
+        pendingTelemedicineReviews,
+        myReviewedRequests,
+        myApprovedRequests,
+        myRejectedRequests,
+        doctorScheduledRequests,
+      })
+    );
   } catch (err) {
     return handleError(res, err);
   }

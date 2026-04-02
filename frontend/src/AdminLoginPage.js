@@ -34,6 +34,7 @@ const AdminLoginPage = () => {
 
     localStorage.setItem("token", data.data.token);
     localStorage.setItem("user", JSON.stringify(data.data.user));
+    window.dispatchEvent(new Event("auth-changed"));
     navigate("/AdminDashboard");
   };
 

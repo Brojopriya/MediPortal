@@ -100,6 +100,17 @@ const Profile = () => {
 
     const data = await updateDoctorProfile(profile);
     if (data?.success) {
+      const saved = data?.data || {};
+      setProfile((prev) => ({
+        ...prev,
+        ...saved,
+        specialty: saved.specialty || saved.speciality || prev.specialty,
+        department: saved.department || prev.department,
+        hospitalName: saved.hospitalName || prev.hospitalName,
+        deptId: saved.deptId ?? prev.deptId,
+        availableDays: saved.availableDays || prev.availableDays,
+        availableTime: saved.availableTime || saved.timeSchedule || prev.availableTime,
+      }));
       alert("Profile updated successfully!");
       setIsEditing(false);
     } else {

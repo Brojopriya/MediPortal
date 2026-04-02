@@ -1,14 +1,22 @@
 .admin-page {
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: #dbe2ea;
-  --bg: #f5f8fb;
+  --ink: #11223b;
+  --muted: #4b5f7a;
+  --line: #d8deef;
+  --bg: #f5f8ff;
   --card: #ffffff;
-  --accent: #0f766e;
+  --accent: #2563eb;
+  --accent-2: #f7b731;
+  --accent-3: #108b67;
+  --accent-4: #dc2626;
+  --focus: rgba(20, 91, 225, 0.24);
   --danger: #b42318;
   --radius: 12px;
   min-height: 100vh;
-  background: linear-gradient(180deg, #eef5ff 0%, #f6fbff 45%, #f8fafc 100%);
+  background:
+    radial-gradient(circle at 8% 2%, rgba(247, 183, 49, 0.16), transparent 44%),
+    radial-gradient(circle at 90% 7%, rgba(37, 99, 235, 0.2), transparent 42%),
+    radial-gradient(circle at 84% 88%, rgba(220, 38, 38, 0.12), transparent 40%),
+    linear-gradient(180deg, #edf4ff 0%, #f4f9ff 48%, #f7f9ff 100%);
   color: var(--ink);
   padding: 24px 16px 40px;
 }
@@ -29,7 +37,7 @@
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .admin-title {
@@ -39,6 +47,8 @@
 .admin-title h1 {
   margin: 0;
   font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  color: #0c2041;
 }
 
 .admin-title p {
@@ -63,42 +73,46 @@
 }
 
 .admin-notice.success {
-  background: #edfdf3;
+  background: linear-gradient(90deg, #ecfdf3 0%, #f2fff6 100%);
   color: #166534;
-  border-color: #b7e6c6;
+  border-color: #8fd3a9;
 }
 
 .admin-notice.error {
-  background: #fff4f4;
+  background: linear-gradient(90deg, #fff3f3 0%, #fff8f8 100%);
   color: #991b1b;
-  border-color: #f3b9b9;
+  border-color: #efabab;
 }
 
 .admin-btn {
   border: 1px solid var(--line);
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
   border-radius: 10px;
   padding: 8px 12px;
   font-weight: 600;
+  color: #1b365e;
   cursor: pointer;
-  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.16s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .admin-btn:hover {
-  background: #f8fbff;
-  border-color: #c7d7e9;
+  transform: translateY(-1px);
+  background: #f2f7ff;
+  border-color: #c4d4ef;
+  box-shadow: 0 10px 16px -14px rgba(14, 39, 84, 0.5);
 }
 
 .admin-btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, #45b7d1 100%);
+  border-color: #1650be;
   color: #fff;
+  box-shadow: 0 12px 20px -16px rgba(20, 91, 225, 0.8);
 }
 
 .admin-btn.danger {
-  border-color: #efc8c8;
+  border-color: #efb9c8;
   color: var(--danger);
-  background: #fff5f5;
+  background: linear-gradient(180deg, #fff5f8 0%, #fff9fb 100%);
 }
 
 .admin-tabs {
@@ -111,16 +125,24 @@
 .admin-tab {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%);
   padding: 10px;
   font-weight: 600;
+  color: #324f78;
   cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.admin-tab:hover {
+  transform: translateY(-1px);
+  border-color: #b8c8ea;
+  box-shadow: 0 10px 16px -14px rgba(17, 34, 59, 0.55);
 }
 
 .admin-tab.active {
-  border-color: #97c9c4;
-  background: #edf9f7;
-  color: #0f5f59;
+  border-color: #9bb8f2;
+  background: linear-gradient(135deg, #e8f0ff 0%, #f2f7ff 100%);
+  color: #17428a;
 }
 
 .admin-cards {
@@ -143,7 +165,19 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
-  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.38);
+  box-shadow: 0 14px 24px -22px rgba(17, 34, 59, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-4));
+  opacity: 0.85;
 }
 
 .admin-card h3 {
@@ -158,14 +192,31 @@
   margin: 8px 0 0;
   font-size: 1.35rem;
   font-weight: 700;
+  color: #0d2852;
+}
+
+.admin-cards .admin-card:nth-child(4n + 1)::before {
+  background: linear-gradient(90deg, #2563eb 0%, #45b7d1 100%);
+}
+
+.admin-cards .admin-card:nth-child(4n + 2)::before {
+  background: linear-gradient(90deg, #f7b731 0%, #f59e0b 100%);
+}
+
+.admin-cards .admin-card:nth-child(4n + 3)::before {
+  background: linear-gradient(90deg, #108b67 0%, #4ecdc4 100%);
+}
+
+.admin-cards .admin-card:nth-child(4n + 4)::before {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
 }
 
 .admin-panel {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border: 1px solid #d7e2f6;
   border-radius: var(--radius);
   padding: 14px;
-  box-shadow: 0 10px 24px -20px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 16px 28px -24px rgba(18, 34, 62, 0.6);
 }
 
 .admin-user-layout {
@@ -183,8 +234,8 @@
 }
 
 .admin-create-user-panel {
-  border-color: #c8e3df;
-  background: linear-gradient(180deg, #f8fffe 0%, #ffffff 45%);
+  border-color: #c8d9fd;
+  background: linear-gradient(165deg, #f2f6ff 0%, #ffffff 58%);
 }
 
 .admin-panel-subtitle {
@@ -232,10 +283,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #e5edf6;
+  border: 1px solid #dde6f8;
   border-radius: 10px;
   padding: 8px 10px;
-  background: #fbfdff;
+  background: linear-gradient(90deg, #f8fbff 0%, #ffffff 100%);
 }
 
 .admin-role-item strong {
@@ -268,15 +319,15 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
-  box-shadow: inset 0 0 0 1px #d8e3ef;
+  box-shadow: inset 0 0 0 1px #d5e1f5, 0 16px 26px -23px rgba(20, 91, 225, 0.65);
 }
 
 .admin-pie-center {
   width: 86px;
   height: 86px;
   border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid #dbe5f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid #d4e0f5;
   display: grid;
   place-items: center;
   text-align: center;
@@ -306,9 +357,9 @@
   align-items: center;
   gap: 8px;
   padding: 7px 9px;
-  border: 1px solid #e5edf6;
+  border: 1px solid #dae5f8;
   border-radius: 9px;
-  background: #fbfdff;
+  background: linear-gradient(90deg, #f8fbff 0%, #ffffff 100%);
 }
 
 .admin-dot {
@@ -338,14 +389,14 @@
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: #e7eef6;
+  background: #e5edfb;
   overflow: hidden;
 }
 
 .admin-bar-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #0ea5e9 0%, #0f766e 100%);
+  background: linear-gradient(90deg, #2563eb 0%, #f7b731 52%, #dc2626 100%);
 }
 
 .admin-toolbar {
@@ -360,8 +411,8 @@
   align-items: center;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid #d4e0ec;
-  background: #f7fbff;
+  border: 1px solid #cbd9f4;
+  background: linear-gradient(180deg, #f6f9ff 0%, #eff4ff 100%);
   color: #334155;
   font-size: 0.85rem;
   font-weight: 600;
@@ -380,11 +431,11 @@
 .admin-input,
 .admin-select,
 .admin-textarea {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #bfcee8;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 0.95rem;
-  background: #fff;
+  background: #ffffff;
 }
 
 .admin-select {
@@ -394,9 +445,9 @@
 .admin-input:focus,
 .admin-select:focus,
 .admin-textarea:focus {
-  outline: 2px solid rgba(15, 118, 110, 0.22);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
-  border-color: #78b9b1;
+  border-color: #6c97ed;
 }
 
 .admin-input,
@@ -428,9 +479,16 @@
 .admin-table th,
 .admin-table td {
   text-align: left;
-  border-bottom: 1px solid #e7edf4;
+  border-bottom: 1px solid #e2e9f8;
   padding: 10px;
   font-size: 0.92rem;
+}
+
+.admin-table thead th {
+  color: #ffffff;
+  background: linear-gradient(120deg, #1e40af, #2563eb);
+  position: sticky;
+  top: 0;
 }
 
 .admin-chip {
@@ -439,23 +497,23 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
-  background: #eef2f7;
-  color: #334155;
+  background: #e9f1ff;
+  color: #1e3a67;
 }
 
 .admin-chip.pending {
-  background: #fff7ed;
-  color: #9a3412;
+  background: #fff4e6;
+  color: #a14307;
 }
 
 .admin-chip.approved {
-  background: #ecfdf3;
-  color: #166534;
+  background: #e6f9ef;
+  color: #0f6a44;
 }
 
 .admin-chip.rejected {
-  background: #fef2f2;
-  color: #991b1b;
+  background: #ffecef;
+  color: #a61c3c;
 }
 
 .admin-section-title {
@@ -481,10 +539,10 @@
 }
 
 .admin-hierarchy-card {
-  border: 1px solid #dbe6f3;
+  border: 1px solid #d5e2f7;
   border-radius: 10px;
   padding: 10px;
-  background: #fbfdff;
+  background: linear-gradient(180deg, #f9fbff 0%, #ffffff 100%);
 }
 
 .admin-hierarchy-card h4 {

@@ -47,6 +47,8 @@ const Sidebar = () => {
         </Link>
         <button className="logout-btn" onClick={() => {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event("auth-changed"));
           window.location.href = "/login";
         }}>
           <i className="icon">🚪</i>

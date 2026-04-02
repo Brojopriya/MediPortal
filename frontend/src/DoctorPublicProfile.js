@@ -198,6 +198,7 @@ const DoctorPublicProfile = () => {
   const doctorQualification = doctor?.qualification || "Available on request";
   const doctorExperience = doctor?.experience || "Available on request";
   const doctorConsultationFee = doctor?.consultationFee ? `BDT ${doctor.consultationFee}` : "On request";
+  const doctorAvailableTime = availableTimeText || "Available on schedule";
   const doctorBio = doctor?.bio || "A dedicated specialist focused on patient-first care and thoughtful consultations.";
 
   const allowedDays = useMemo(() => {
@@ -344,6 +345,10 @@ const DoctorPublicProfile = () => {
               <div>
                 <strong className="doctor-public-working-days">{availableDaysText || "Daily"}</strong>
                 <span>Working days</span>
+              </div>
+              <div>
+                <strong>{doctorAvailableTime}</strong>
+                <span>Available time</span>
               </div>
             </div>
           </article>

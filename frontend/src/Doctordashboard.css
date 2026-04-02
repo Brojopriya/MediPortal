@@ -6,20 +6,23 @@
   --dd-ink: #0f2438;
   --dd-muted: #5c7085;
   --dd-line: #d6e3ef;
-  --dd-accent: #1d6fa8;
-  --dd-accent-strong: #125785;
-  --dd-sidebar-start: #0f3f67;
-  --dd-sidebar-end: #0b2f4b;
+  --dd-accent: #2563eb;
+  --dd-accent-strong: #45b7d1;
+  --dd-sidebar-start: #1e40af;
+  --dd-sidebar-end: #2563eb;
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(180deg, #edf5fe 0%, #f6fbff 100%);
+  background:
+    radial-gradient(circle at 10% 8%, rgba(247, 183, 49, 0.14), transparent 34%),
+    radial-gradient(circle at 90% 12%, rgba(69, 183, 209, 0.16), transparent 34%),
+    linear-gradient(180deg, #edf5fe 0%, #f6fbff 100%);
   color: var(--dd-ink);
   font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
 .doctor-dashboard .sidebar {
   width: 270px;
-  background: linear-gradient(180deg, var(--dd-sidebar-start) 0%, var(--dd-sidebar-end) 100%);
+  background: linear-gradient(180deg, var(--dd-sidebar-start) 0%, var(--dd-sidebar-end) 62%, #45b7d1 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -62,8 +65,9 @@
 }
 
 .doctor-dashboard .nav-item.active {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.14));
   color: #fff;
+  border-left: 3px solid #f7b731;
 }
 
 .doctor-dashboard .sidebar-footer {
@@ -77,8 +81,8 @@
 
 .doctor-dashboard .logout-btn {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: linear-gradient(135deg, #dc2626, #ef4444);
   color: #fff;
   border-radius: 10px;
   padding: 10px 12px;
@@ -87,7 +91,7 @@
 }
 
 .doctor-dashboard .logout-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+  filter: brightness(1.08);
 }
 
 .doctor-dashboard .dashboard-main {
@@ -116,6 +120,24 @@
 .doctor-dashboard .emergency-page h2 {
   margin: 0 0 10px;
   color: var(--dd-ink);
+  background: linear-gradient(135deg, #2563eb, #45b7d1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.doctor-dashboard .prescriptions-page h2 {
+  background: linear-gradient(135deg, #108b67, #4ecdc4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.doctor-dashboard .emergency-page h2 {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .doctor-dashboard .dashboard-home p {
@@ -130,10 +152,22 @@
 }
 
 .doctor-dashboard .overview-cards .card {
-  background: linear-gradient(165deg, #1f79b7, #125785);
+  background: linear-gradient(165deg, #f7b731, #f59e0b);
   color: #fff;
   border-radius: 12px;
   padding: 14px;
+}
+
+.doctor-dashboard .overview-cards .card:nth-child(4n + 2) {
+  background: linear-gradient(165deg, #2563eb, #45b7d1);
+}
+
+.doctor-dashboard .overview-cards .card:nth-child(4n + 3) {
+  background: linear-gradient(165deg, #108b67, #4ecdc4);
+}
+
+.doctor-dashboard .overview-cards .card:nth-child(4n + 4) {
+  background: linear-gradient(165deg, #dc2626, #ef4444);
 }
 
 .doctor-dashboard .overview-cards .card h3 {
@@ -167,9 +201,17 @@
 }
 
 .doctor-dashboard th {
-  background: #f3f8fe;
-  color: #164160;
+  background: linear-gradient(120deg, #1e40af, #2563eb);
+  color: #ffffff;
   font-weight: 700;
+}
+
+.doctor-dashboard tbody tr:nth-child(even) {
+  background: linear-gradient(90deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.doctor-dashboard tbody tr:hover {
+  background: linear-gradient(90deg, #eef6ff 0%, #f0fffb 100%);
 }
 
 .doctor-dashboard tr:last-child td {
@@ -199,8 +241,8 @@
 }
 
 .doctor-dashboard .prescriptions-page button.danger {
-  background: #fbe4e4;
-  color: #972222;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #ffffff;
 }
 
 .doctor-dashboard .prescriptions-page button:disabled {
@@ -254,7 +296,7 @@
 .doctor-dashboard .prescription-section {
   border: 1px solid #dbe7f2;
   border-radius: 12px;
-  background: #fcfeff;
+  background: linear-gradient(180deg, #fcfeff 0%, #f7fbff 100%);
   padding: 12px;
   margin-bottom: 12px;
 }
@@ -365,8 +407,20 @@
   font-size: 0.76rem;
   font-weight: 700;
   color: #184766;
-  background: #e8f3fd;
-  border: 1px solid #d0e4f8;
+  background: linear-gradient(135deg, #e8f3fd, #dff7ff);
+  border: 1px solid #c9e5fb;
+}
+
+.doctor-dashboard .preview-chip:nth-child(2n) {
+  color: #166534;
+  background: linear-gradient(135deg, #eafaf3, #dcfce7);
+  border-color: #bcebd4;
+}
+
+.doctor-dashboard .preview-chip:nth-child(3n) {
+  color: #92400e;
+  background: linear-gradient(135deg, #fff7e6, #ffefc7);
+  border-color: #f5d79b;
 }
 
 .doctor-dashboard .prescription-preview-body {
@@ -443,7 +497,7 @@
 }
 
 .doctor-dashboard .cancel-btn {
-  background: #73879d;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
 }
 
 @media (max-width: 900px) {
